@@ -126,6 +126,15 @@
     .skip-btn:hover { color: var(--text); background: var(--surface); }
     .sound-btn { background: var(--surface2); border: none; color: var(--blue2); font-family: var(--font); font-size: .85rem; font-weight: 700; cursor: pointer; padding: 8px 18px; border-radius: 999px; margin-top: 10px; transition: background .2s, transform .15s; }
     .sound-btn:hover { background: var(--blue); color: #fff; transform: scale(1.05); }
+    .typing-card:hover { border-color: var(--purple, #ce82ff); box-shadow: 0 12px 40px rgba(206,130,255,.25); }
+    .typing-area { width: 100%; display: flex; gap: 10px; margin-bottom: 12px; }
+    .typing-input { flex: 1; background: var(--surface); border: 2px solid var(--surface2); border-radius: var(--radius-sm); color: var(--text); font-family: var(--font); font-size: 1.2rem; font-weight: 700; padding: 14px 16px; outline: none; transition: border-color .2s; }
+    .typing-input:focus { border-color: var(--blue); }
+    .typing-input.input-correct { border-color: var(--accent) !important; background: rgba(88,204,2,.15); }
+    .typing-input.input-wrong   { border-color: var(--red)    !important; background: rgba(255,75,75,.15); animation: shake .4s ease; }
+    .typing-submit-btn { background: var(--blue); border: none; color: #fff; font-family: var(--font); font-size: 1rem; font-weight: 800; padding: 14px 20px; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; transition: transform .15s, opacity .15s; box-shadow: 0 4px 20px rgba(28,176,246,.4); }
+    .typing-submit-btn:hover:not(:disabled) { transform: translateY(-2px); }
+    .typing-submit-btn:disabled { opacity: .4; cursor: not-allowed; }
 
     /* ===== フィードバック ===== */
     .feedback-toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); padding: 14px 28px; border-radius: 999px; font-size: 1rem; font-weight: 800; z-index: 100; animation: toastIn .3s ease both, toastOut .3s ease 1.1s both; white-space: nowrap; }
@@ -166,7 +175,7 @@
 </head>
 <body>
   <div id="app"></div>
-  <script src="words/words_adjectives.js"></script>
+  <script src="words_adjectives.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

@@ -211,6 +211,11 @@ function renderMenu() {
           <div class="mode-name">ゲームモード</div>
           <div class="mode-desc">もんだいに こたえて<br>スコアをかせごう</div>
         </button>
+        <button class="mode-card typing-card" onclick="startTyping()" style="grid-column:1/-1;">
+          <div class="mode-icon">⌨️</div>
+          <div class="mode-name">タイピングモード</div>
+          <div class="mode-desc">えいごをみて　にほんごを　うちこもう</div>
+        </button>
       </div>
       <div class="word-count-badge">${filteredWords.length}語 学習できます</div>
     </div>
@@ -422,6 +427,131 @@ function renderGameOver() {
       <div class="complete-btns">
         <button class="action-btn primary"   onclick="startGame()">もう一度</button>
         <button class="action-btn secondary" onclick="startStudy()">あんきへ</button>
+        <button class="action-btn ghost"     onclick="renderMenu()">メニュー</button>
+      </div>
+    </div>
+  `;
+}
+
+// ===============================
+//  タイピングモード
+// ===============================
+function startTyping() {
+  applyFilter(selectedCategory);
+  if (filteredWords.length === 0) { alert('単語がありません'); return; }
+  currentMode = 'typing';
+  score = 0; lives = MAX_LIVES; answeredCount = 0;
+  totalQuestions = Math.min(TOTAL_Q, filteredWords.length);
+  gameQueue = shuffle([...filteredWords]).slice(0, totalQuestions);
+  nextTypingQuestion();
+}
+
+function nextTypingQuestion() {
+  if (answeredCount >= totalQuestions || lives <= 0) { renderTypingOver(); return; }
+  currentQuestion = gameQueue[answeredCount];
+  renderTypingQuestion();
+}
+
+function renderTypingQuestion() {
+  const pct = (answeredCount / totalQuestions * 100).toFixed(0);
+  const hearts = Array.from({length: MAX_LIVES}, (_, i) =>
+    `<span class="heart ${i < lives ? 'active' : 'lost'}">♥</span>`
+  ).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="game-screen">
+      <div class="game-header">
+        <button class="back-btn" onclick="renderMenu()">← もどる</button>
+        <div class="game-progress-wrap">
+          <div class="game-progress-bar" style="width:${pct}%"></div>
+        </div>
+        <span class="game-counter">${answeredCount + 1}/${totalQuestions}</span>
+      </div>
+      <div class="game-hud">
+        <div class="hearts-wrap">${hearts}</div>
+        <div class="score-badge">⭐ ${score}</div>
+      </div>
+      <div class="question-area">
+        <p class="question-label">にほんごは　なに？</p>
+        <div class="question-word">
+          <span class="q-kanji" style="font-size:2.4rem;letter-spacing:2px;">${currentQuestion.english}</span>
+        </div>
+        <button class="sound-btn" onclick="speak('${currentQuestion.english}')">🔊 きく</button>
+      </div>
+      <p class="choice-label">よみかた（ひらがな）を　いれてね</p>
+      <div class="typing-area">
+        <input id="typingInput" class="typing-input" type="text"
+          placeholder="ひらがなでいれてね"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          onkeydown="if(event.key==='Enter')checkTyping()" />
+        <button class="typing-submit-btn" onclick="checkTyping()">こたえる</button>
+      </div>
+      <button class="skip-btn" onclick="skipTyping()">わからない</button>
+    </div>
+  `;
+  // 表示後すぐフォーカス＆読み上げ
+  setTimeout(() => {
+    const inp = document.getElementById('typingInput');
+    if (inp) inp.focus();
+    speak(currentQuestion.english);
+  }, 300);
+}
+
+function checkTyping() {
+  const inp = document.getElementById('typingInput');
+  if (!inp) return;
+  const userInput = inp.value.trim();
+  if (!userInput) return;
+
+  // 正解判定：kanji または hiragana と一致で正解
+  const correct1 = currentQuestion.kanji.replace(/[・。、]/g, '');
+  const correct2 = currentQuestion.hiragana.replace(/[・。、]/g, '');
+  const input    = userInput.replace(/[・。、\s]/g, '');
+  const isCorrect = input === correct1 || input === correct2;
+
+  inp.disabled = true;
+  document.querySelector('.typing-submit-btn').disabled = true;
+
+  if (isCorrect) {
+    inp.classList.add('input-correct');
+    score += 10;
+    speak(currentQuestion.english);
+    showFeedback(true, `せいかい！ +10てん 🎉`);
+    answeredCount++;
+    setTimeout(nextTypingQuestion, 1100);
+  } else {
+    inp.classList.add('input-wrong');
+    lives--;
+    speak(currentQuestion.english, 0.75);
+    showFeedback(false, `こたえは「${currentQuestion.kanji}（${currentQuestion.hiragana}）」だよ！`);
+    answeredCount++;
+    setTimeout(lives <= 0 ? renderTypingOver : nextTypingQuestion, 1800);
+  }
+}
+
+function skipTyping() {
+  lives--;
+  speak(currentQuestion.english, 0.75);
+  showFeedback(false, `こたえは「${currentQuestion.kanji}（${currentQuestion.hiragana}）」だよ！`);
+  answeredCount++;
+  setTimeout(lives <= 0 ? renderTypingOver : nextTypingQuestion, 1800);
+}
+
+function renderTypingOver() {
+  const cleared = lives > 0;
+  const rank = score >= totalQuestions*9 ? '🥇' : score >= totalQuestions*6 ? '🥈' : '🥉';
+  document.getElementById('app').innerHTML = `
+    <div class="gameover-screen">
+      <div class="go-icon">${cleared ? '🎊' : '😢'}</div>
+      <h2 class="go-title">${cleared ? 'クリア！' : 'ゲームオーバー'}</h2>
+      <div class="go-score-block">
+        <div class="go-rank">${rank}</div>
+        <div class="go-score">${score} <span class="go-score-unit">てん</span></div>
+        <div class="go-detail">${answeredCount}もん中 ${Math.round(score/10)}せいかい</div>
+      </div>
+      <div class="complete-btns">
+        <button class="action-btn primary"   onclick="startTyping()">もう一度</button>
+        <button class="action-btn secondary" onclick="startGame()">ゲームモードへ</button>
         <button class="action-btn ghost"     onclick="renderMenu()">メニュー</button>
       </div>
     </div>
