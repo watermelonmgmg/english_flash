@@ -1,7 +1,7 @@
 // 英検5級 重要単語
 // id: 201〜 （adjectives:1〜20 の続き）
 
-const WORDS_WEATHER_SPORTS_PLACES = [
+const SPORTS = [
    // スポーツ sports
   { id: 211, english: "sport",        kanji: "スポーツ",     hiragana: "すぽーつ",       category: "sports", emoji: "🏅" },
   { id: 212, english: "baseball",     kanji: "野球",         hiragana: "やきゅう",       category: "sports", emoji: "⚾" },
