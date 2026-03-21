@@ -181,7 +181,149 @@ function getNextTitle() {
   return TITLE_DEFS.find(t => t.need > earned) || null;
 }
 
-function loadStats() {
+// ===============================
+//  たまごそだて システム
+// ===============================
+const PET_KEY = 'wordquest_pet';
+
+const PET_STAGES = [
+  { need: 0,   emoji: '🥚',  name: 'たまご',           msg: 'まだ　うまれていないよ…' },
+  { need: 10,  emoji: '🐣',  name: 'うまれたて',        msg: 'うまれたよ！よろしくね！' },
+  { need: 30,  emoji: '🐥',  name: 'ひよこ',           msg: 'すこし　おおきくなったよ！' },
+  { need: 60,  emoji: '🐤',  name: 'そだちざかり',      msg: 'どんどん　つよくなってるよ！' },
+  { need: 100, emoji: '🐦',  name: 'こどり',           msg: 'もう　こんなに　そだったね！' },
+  { need: 150, emoji: '🦅',  name: 'おおとり',         msg: 'すごい！　おおきなとりになったよ！' },
+  { need: 200, emoji: '🦄',  name: 'でんせつのいきもの', msg: '✨ きみは　でんせつの　えいごマスターだ！！' },
+];
+
+function loadPet() {
+  try { return JSON.parse(localStorage.getItem(PET_KEY) || '{}'); } catch { return {}; }
+}
+function savePet(pet) {
+  localStorage.setItem(PET_KEY, JSON.stringify(pet));
+}
+
+function getPetStage(totalCorrect) {
+  let stage = PET_STAGES[0];
+  for (const s of PET_STAGES) {
+    if (totalCorrect >= s.need) stage = s;
+  }
+  return stage;
+}
+
+function getNextPetStage(totalCorrect) {
+  return PET_STAGES.find(s => s.need > totalCorrect) || null;
+}
+
+function checkPetEvolution(prevCorrect, newCorrect) {
+  const prevStage = getPetStage(prevCorrect);
+  const newStage  = getPetStage(newCorrect);
+  return prevStage.need !== newStage.need ? newStage : null;
+}
+
+function setPetName(name) {
+  const pet = loadPet();
+  pet.name = name;
+  savePet(pet);
+  renderMenu();
+}
+
+function renderPetWidget() {
+  const stats = loadStats();
+  const total = stats.totalCorrect || 0;
+  const stage = getPetStage(total);
+  const next  = getNextPetStage(total);
+  const pet   = loadPet();
+  const petName = pet.name || stage.name;
+  const pct   = next ? Math.min((total - stage.need) / (next.need - stage.need) * 100, 100).toFixed(0) : 100;
+
+  return `
+    <div class="pet-widget" onclick="renderPetPage()">
+      <div class="pet-emoji-wrap">
+        <span class="pet-emoji">${stage.emoji}</span>
+      </div>
+      <div class="pet-info">
+        <div class="pet-name-row">
+          <span class="pet-name">${petName}</span>
+          <span class="pet-stage-label">${stage.name}</span>
+        </div>
+        <div class="pet-progress-wrap">
+          <div class="pet-progress-bar" style="width:${pct}%"></div>
+        </div>
+        <span class="pet-next-label">
+          ${next ? `あと ${next.need - total}もん で しんか！` : '✨ さいこうレベル！'}
+        </span>
+      </div>
+    </div>
+  `;
+}
+
+function renderPetPage() {
+  const stats = loadStats();
+  const total = stats.totalCorrect || 0;
+  const stage = getPetStage(total);
+  const next  = getNextPetStage(total);
+  const pet   = loadPet();
+  const petName = pet.name || stage.name;
+
+  const stagesHTML = PET_STAGES.map(s => {
+    const unlocked = total >= s.need;
+    const isCurrent = getPetStage(total).need === s.need;
+    return `
+      <div class="pet-stage-row ${unlocked ? 'unlocked' : 'locked'} ${isCurrent ? 'current' : ''}">
+        <span class="pet-stage-emoji">${unlocked ? s.emoji : '❓'}</span>
+        <div class="pet-stage-info">
+          <span class="pet-stage-name">${unlocked ? s.name : '？？？'}</span>
+          <span class="pet-stage-cond">${s.need}もん せいかいで かいほう</span>
+          ${isCurrent ? `<span class="pet-stage-msg">${s.msg}</span>` : ''}
+        </div>
+        ${isCurrent ? '<span class="pet-current-mark">👈 いまここ</span>' : ''}
+        ${unlocked && !isCurrent ? '<span class="pet-cleared-mark">✅</span>' : ''}
+      </div>`;
+  }).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="badge-page">
+      <div class="badge-page-header">
+        <button class="back-btn" onclick="renderMenu()">← もどる</button>
+        <h2 class="badge-page-title">🥚 そだてっこ</h2>
+      </div>
+
+      <div class="pet-big-card">
+        <div class="pet-big-emoji">${stage.emoji}</div>
+        <div class="pet-big-info">
+          <p class="pet-big-name">${petName}</p>
+          <p class="pet-big-stage">${stage.name}</p>
+          <p class="pet-big-msg">${stage.msg}</p>
+        </div>
+      </div>
+
+      <div class="pet-name-edit">
+        <input id="petNameInput" class="typing-input" type="text"
+          placeholder="なまえをつけてね"
+          value="${pet.name || ''}"
+          maxlength="10"
+          autocomplete="off" spellcheck="false" />
+        <button class="typing-submit-btn" onclick="setPetName(document.getElementById('petNameInput').value.trim() || '${stage.name}')">きめる</button>
+      </div>
+
+      ${next ? `
+      <div class="next-title-bar">
+        <span>つぎのすがた「${next.emoji} ${PET_STAGES.find(s=>s.need===next.need)?.name||''}」まで</span>
+        <span class="next-need">あと <b>${next.need - total}</b> もん</span>
+        <div class="next-title-progress-wrap">
+          <div class="next-title-progress-bar" style="width:${(Math.min((total - stage.need) / (next.need - stage.need) * 100, 100)).toFixed(0)}%"></div>
+        </div>
+      </div>` : `
+      <div class="next-title-bar complete">✨ さいこうのすがたに なったよ！！</div>`}
+
+      <h3 class="section-title">せいちょう ロードマップ</h3>
+      <div class="title-roadmap">${stagesHTML}</div>
+
+      <button class="action-btn ghost" style="width:100%;margin-top:8px;" onclick="renderMenu()">メニューへもどる</button>
+    </div>
+  `;
+}
   try { return JSON.parse(localStorage.getItem(STATS_KEY) || '{}'); } catch { return {}; }
 }
 function saveStats(stats) {
@@ -209,11 +351,14 @@ function checkNewBadges(stats) {
 
 function addCorrectStats(isPerfect = false) {
   const stats = loadStats();
-  stats.totalCorrect  = (stats.totalCorrect  || 0) + 1;
+  const prevCorrect = stats.totalCorrect || 0;
+  stats.totalCorrect  = prevCorrect + 1;
   stats.totalGames    = (stats.totalGames    || 0);
   stats.maxComboEver  = Math.max(stats.maxComboEver || 0, combo);
   stats.perfectClears = (stats.perfectClears || 0) + (isPerfect ? 1 : 0);
   saveStats(stats);
+  const evolved = checkPetEvolution(prevCorrect, stats.totalCorrect);
+  if (evolved) setTimeout(() => showEvolutionNotification(evolved), 600);
   return checkNewBadges(stats);
 }
 
@@ -274,11 +419,11 @@ if (window.speechSynthesis) {
 }
 
 function init() {
-    allWords = [
+  allWords = [
     ...WORDS_ADJECTIVES,
-    ...WORDS_PLACES,
-    ...WORDS_SPORTS,
-    ...WORDS_WEATHER,
+    ...(typeof WORDS_PLACES  !== 'undefined' ? WORDS_PLACES  : []),
+    ...(typeof WORDS_SPORTS  !== 'undefined' ? WORDS_SPORTS  : []),
+    ...(typeof WORDS_WEATHER !== 'undefined' ? WORDS_WEATHER : []),
   ];
   filteredWords = [...allWords];
   renderMenu();
@@ -314,6 +459,7 @@ function renderMenu() {
         <h1 class="logo-title">WordQuest</h1>
         <p class="logo-sub">えいごたんごを　おぼえよう！</p>
       </div>
+      ${renderPetWidget()}
       <div class="filter-bar">
         <label class="filter-label">カテゴリー</label>
         <select id="catSelect" class="cat-select" onchange="applyFilter(this.value)">
@@ -607,6 +753,20 @@ function showBadgeNotification(badges) {
       setTimeout(() => el.remove(), 2500);
     }, i * 600);
   });
+}
+
+function showEvolutionNotification(stage) {
+  const el = document.createElement('div');
+  el.className = 'evolution-toast';
+  el.innerHTML = `
+    <div class="evo-emoji">${stage.emoji}</div>
+    <div class="evo-text">
+      <b>しんか！</b><br>
+      「${stage.name}」に なったよ！
+    </div>
+  `;
+  document.getElementById('app').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
 }
 
 function renderGameOver() {
@@ -1064,6 +1224,8 @@ function renderReadingPage() {
 
       <div class="reading-nav-btns">
         <button class="action-btn repeat-btn" onclick="startRepeat()">🎤 リピート れんしゅう</button>
+        <button class="action-btn primary" onclick="startBlanks()">✍️ あなうめ もんだい</button>
+        <button class="action-btn secondary" onclick="startQuestions()">❓ ないよう もんだい</button>
       </div>
 
       <div id="wordPopup" class="word-popup" style="display:none;"></div>
