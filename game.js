@@ -137,6 +137,32 @@ let totalQuestions = 0;
 let answeredCount = 0;
 let selectedCategory = 'all';
 
+// ===============================
+//  まちがいノート（localStorage）
+// ===============================
+const STORAGE_KEY = 'wordquest_mistakes';
+
+function loadMistakes() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function saveMistake(wordId) {
+  const mistakes = loadMistakes();
+  mistakes[wordId] = (mistakes[wordId] || 0) + 1;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(mistakes));
+}
+
+function getMistakeWords() {
+  const mistakes = loadMistakes();
+  return allWords.filter(w => mistakes[w.id]).sort((a, b) => (mistakes[b.id] || 0) - (mistakes[a.id] || 0));
+}
+
+function getMistakeCount() {
+  return Object.keys(loadMistakes()).filter(id => allWords.some(w => w.id === Number(id))).length;
+}
+
 // ===== 音声読み上げ =====
 function speak(text, rate = 0.85) {
   if (!window.speechSynthesis) return;
@@ -223,6 +249,10 @@ function renderMenu() {
         </button>
       </div>
       <div class="word-count-badge">${filteredWords.length}語 学習できます</div>
+      ${getMistakeCount() > 0 ? `
+      <button class="mistake-menu-btn" onclick="renderMistakeMenu()">
+        📝 まちがいノート <span class="mistake-count-badge">${getMistakeCount()}語</span>
+      </button>` : ''}
     </div>
   `;
 }
@@ -402,6 +432,7 @@ function checkAnswer(chosenId, btn) {
   } else {
     btn.classList.add('wrong');
     lives--;
+    saveMistake(currentQuestion.id);
     speak(currentQuestion.english, 0.75);
     showFeedback(false, `こたえは「${currentQuestion.english}」だよ！`);
     answeredCount++;
@@ -415,6 +446,7 @@ function skipQuestion() {
     if (Number(b.dataset.id) === currentQuestion.id) b.classList.add('correct');
   });
   lives--;
+  saveMistake(currentQuestion.id);
   speak(currentQuestion.english, 0.75);
   showFeedback(false, `こたえは「${currentQuestion.english}」だよ！`);
   answeredCount++;
@@ -544,6 +576,7 @@ function checkTyping() {
   } else {
     inp.classList.add('input-wrong');
     lives--;
+    saveMistake(currentQuestion.id);
     speak(currentQuestion.english, 0.75);
     showFeedback(false, `こたえは「${currentQuestion.kanji}（${currentQuestion.hiragana}）」だよ！`);
     answeredCount++;
@@ -553,6 +586,7 @@ function checkTyping() {
 
 function skipTyping() {
   lives--;
+  saveMistake(currentQuestion.id);
   speak(currentQuestion.english, 0.75);
   showFeedback(false, `こたえは「${currentQuestion.kanji}（${currentQuestion.hiragana}）」だよ！`);
   answeredCount++;
@@ -578,6 +612,93 @@ function renderTypingOver() {
       </div>
     </div>
   `;
+}
+
+// ===============================
+//  まちがいノート メニュー
+// ===============================
+function renderMistakeMenu() {
+  const mistakeWords = getMistakeWords();
+  const mistakes = loadMistakes();
+
+  document.getElementById('app').innerHTML = `
+    <div class="menu-screen">
+      <div class="logo-area">
+        <div class="logo-icon">📝</div>
+        <h1 class="logo-title" style="font-size:2rem;">まちがいノート</h1>
+        <p class="logo-sub">${mistakeWords.length}語 まちがえたことがあるよ</p>
+      </div>
+
+      <div class="mistake-list">
+        ${mistakeWords.slice(0, 10).map(w => `
+          <div class="mistake-item">
+            <span class="mistake-word">${w.kanji}</span>
+            <span class="mistake-english">${w.english}</span>
+            <span class="mistake-times">${mistakes[w.id]}回まちがい</span>
+          </div>
+        `).join('')}
+        ${mistakeWords.length > 10 ? `<p class="mistake-more">…ほか ${mistakeWords.length - 10}語</p>` : ''}
+      </div>
+
+      <div class="mode-cards">
+        <button class="mode-card game-card" onclick="startMistakeGame('normal')">
+          <div class="mode-icon">🎮</div>
+          <div class="mode-name">ゲーム①</div>
+          <div class="mode-desc">にほんご→えいご<br>まちがいだけで</div>
+        </button>
+        <button class="mode-card reverse-card" onclick="startMistakeGame('reverse')">
+          <div class="mode-icon">🔄</div>
+          <div class="mode-name">ゲーム②</div>
+          <div class="mode-desc">えいご→にほんご<br>まちがいだけで</div>
+        </button>
+        <button class="mode-card typing-card" onclick="startMistakeTyping()" style="grid-column:1/-1;">
+          <div class="mode-icon">⌨️</div>
+          <div class="mode-name">タイピング</div>
+          <div class="mode-desc">まちがいだけで　うちこもう</div>
+        </button>
+      </div>
+
+      <div style="display:flex;gap:12px;width:100%;">
+        <button class="action-btn ghost" style="flex:1;" onclick="renderMenu()">← もどる</button>
+        <button class="action-btn ghost" style="flex:1;color:#ff4b4b;" onclick="confirmResetMistakes()">🗑️ リセット</button>
+      </div>
+    </div>
+  `;
+}
+
+function confirmResetMistakes() {
+  if (confirm('まちがいノートをリセットしますか？')) {
+    localStorage.removeItem(STORAGE_KEY);
+    renderMenu();
+  }
+}
+
+function startMistakeGame(direction = 'normal') {
+  const mistakeWords = getMistakeWords();
+  if (mistakeWords.length < 4) {
+    // 間違い語が4未満の場合は全体から補填
+    filteredWords = [...allWords];
+  } else {
+    filteredWords = mistakeWords;
+  }
+  currentMode = 'game';
+  gameDirection = direction;
+  score = 0; lives = MAX_LIVES; answeredCount = 0;
+  totalQuestions = Math.min(TOTAL_Q, filteredWords.length);
+  // 間違い回数が多い順に並べてシャッフル（上位を優先）
+  gameQueue = filteredWords.slice(0, totalQuestions);
+  nextQuestion();
+}
+
+function startMistakeTyping() {
+  const mistakeWords = getMistakeWords();
+  if (mistakeWords.length === 0) { alert('まちがいがありません'); return; }
+  filteredWords = mistakeWords.length >= 4 ? mistakeWords : [...allWords];
+  currentMode = 'typing';
+  score = 0; lives = MAX_LIVES; answeredCount = 0;
+  totalQuestions = Math.min(TOTAL_Q, filteredWords.length);
+  gameQueue = filteredWords.slice(0, totalQuestions);
+  nextTypingQuestion();
 }
 
 // ===== ユーティリティ =====
