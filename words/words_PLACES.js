@@ -1,7 +1,7 @@
 // 英検5級 重要単語
 // id: 201〜 （adjectives:1〜20 の続き）
 
-const PLACES = [
+const WORDS_PLACES = [
     // 場所・部屋 places
   { id: 221, english: "house",        kanji: "家",           hiragana: "いえ",           category: "places", emoji: "🏠" },
   { id: 222, english: "kitchen",      kanji: "台所",         hiragana: "だいどころ",     category: "places", emoji: "🍳" },
