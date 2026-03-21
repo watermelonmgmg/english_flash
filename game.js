@@ -423,9 +423,9 @@ if (window.speechSynthesis) {
 function init() {
   allWords = [
     ...WORDS_ADJECTIVES,
-    ...(typeof WORDS_PLACES  !== 'undefined' ? WORDS_PLACES  : []),
-    ...(typeof WORDS_SPORTS  !== 'undefined' ? WORDS_SPORTS  : []),
-    ...(typeof WORDS_WEATHER !== 'undefined' ? WORDS_WEATHER : []),
+    ...WORDS_PLACES,
+    ...WORDS_SPORTS,
+    ...WORDS_WEATHER,
   ];
   filteredWords = [...allWords];
   renderMenu();
