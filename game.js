@@ -158,6 +158,29 @@ const BADGE_DEFS = [
   { id: 'play_20',        icon: '👑', name: '20かい あそんだ！',       cond: s => s.totalGames >= 20 },
 ];
 
+// 称号：バッジ獲得数に応じて解放
+const TITLE_DEFS = [
+  { need: 1,  icon: '🔰', title: 'えいごの たまご',      msg: 'よーし！はじめの いっぽだ！' },
+  { need: 3,  icon: '📚', title: 'えいごの まなびや',     msg: 'どんどん おぼえてるね！すごい！' },
+  { need: 5,  icon: '🌸', title: 'えいごの がんばりや',   msg: 'もう こんなに できるようになったね！' },
+  { need: 7,  icon: '🚀', title: 'えいごの チャレンジャー', msg: 'きみは ほんとうに すごい！！' },
+  { need: 10, icon: '👑', title: 'えいごの マスター',     msg: '🎉 ぜんぶ クリア！きみは えいごの おうじゃだ！！' },
+];
+
+function getCurrentTitle() {
+  const earned = loadBadges().length;
+  let current = null;
+  for (const t of TITLE_DEFS) {
+    if (earned >= t.need) current = t;
+  }
+  return current;
+}
+
+function getNextTitle() {
+  const earned = loadBadges().length;
+  return TITLE_DEFS.find(t => t.need > earned) || null;
+}
+
 function loadStats() {
   try { return JSON.parse(localStorage.getItem(STATS_KEY) || '{}'); } catch { return {}; }
 }
@@ -315,6 +338,21 @@ function renderMenu() {
         </button>
       </div>
       <div class="word-count-badge">${filteredWords.length}語 学習できます</div>
+      ${(() => {
+        const title = getCurrentTitle();
+        const earnedCount = loadBadges().length;
+        const next = getNextTitle();
+        return `
+        <button class="badge-menu-btn" onclick="renderBadgePage()">
+          <span class="badge-menu-left">
+            ${title ? `<span class="current-title-icon">${title.icon}</span><span class="current-title-text">${title.title}</span>` : `<span class="current-title-text">バッジを あつめよう！</span>`}
+          </span>
+          <span class="badge-menu-right">
+            🏅 ${earnedCount}/${BADGE_DEFS.length}
+            ${next ? `<span class="next-title-hint">あと${next.need - earnedCount}こで「${next.title}」</span>` : ''}
+          </span>
+        </button>`;
+      })()}
       ${getMistakeCount() > 0 ? `
       <button class="mistake-menu-btn" onclick="renderMistakeMenu()">
         📝 まちがいノート <span class="mistake-count-badge">${getMistakeCount()}語</span>
@@ -595,6 +633,7 @@ function renderGameOver() {
           <button class="retry-btn" onclick="startGame('reverse')">🔄 ゲーム②<span>えいご→にほんご</span></button>
           <button class="retry-btn" onclick="startTyping()" style="grid-column:1/-1;">⌨️ タイピング<span>えいごをみてうちこむ</span></button>
         </div>
+        <button class="action-btn primary"   onclick="renderBadgePage()">🏅 バッジをみる</button>
         <button class="action-btn secondary" onclick="startStudy()">🃏 あんきモードへ</button>
         <button class="action-btn ghost"     onclick="renderMenu()">メニューへもどる</button>
       </div>
@@ -748,6 +787,7 @@ function renderTypingOver() {
           <button class="retry-btn" onclick="startGame('reverse')">🔄 ゲーム②<span>えいご→にほんご</span></button>
           <button class="retry-btn" onclick="startTyping()" style="grid-column:1/-1;">⌨️ タイピング<span>えいごをみてうちこむ</span></button>
         </div>
+        <button class="action-btn primary"   onclick="renderBadgePage()">🏅 バッジをみる</button>
         <button class="action-btn secondary" onclick="startStudy()">🃏 あんきモードへ</button>
         <button class="action-btn ghost"     onclick="renderMenu()">メニューへもどる</button>
       </div>
@@ -842,6 +882,94 @@ function startMistakeTyping() {
   totalQuestions = Math.min(TOTAL_Q, filteredWords.length);
   gameQueue = filteredWords.slice(0, totalQuestions);
   nextTypingQuestion();
+}
+
+// ===============================
+//  バッジ・称号 画面
+// ===============================
+function renderBadgePage() {
+  const earned = loadBadges();
+  const stats  = loadStats();
+  const title  = getCurrentTitle();
+  const next   = getNextTitle();
+
+  // 称号ロードマップHTML
+  const titleRoadmap = TITLE_DEFS.map(t => {
+    const unlocked = earned.length >= t.need;
+    return `
+      <div class="title-row ${unlocked ? 'unlocked' : 'locked'}">
+        <span class="title-row-icon">${unlocked ? t.icon : '🔒'}</span>
+        <div class="title-row-info">
+          <span class="title-row-name">${unlocked ? t.title : '？？？'}</span>
+          <span class="title-row-cond">バッジ ${t.need}こ で かいほう</span>
+          ${unlocked ? `<span class="title-row-msg">${t.msg}</span>` : ''}
+        </div>
+        ${unlocked ? '<span class="title-row-check">✅</span>' : ''}
+      </div>`;
+  }).join('');
+
+  // バッジ一覧HTML
+  const badgeGrid = BADGE_DEFS.map(def => {
+    const got = earned.includes(def.id);
+    return `
+      <div class="badge-card ${got ? 'got' : 'notyet'}">
+        <span class="badge-card-icon">${got ? def.icon : '❓'}</span>
+        <span class="badge-card-name">${got ? def.name : '？？？'}</span>
+      </div>`;
+  }).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="badge-page">
+      <div class="badge-page-header">
+        <button class="back-btn" onclick="renderMenu()">← もどる</button>
+        <h2 class="badge-page-title">🏅 バッジ・しょうごう</h2>
+      </div>
+
+      ${title ? `
+      <div class="current-title-card">
+        <div class="ct-icon">${title.icon}</div>
+        <div class="ct-info">
+          <p class="ct-label">いまの しょうごう</p>
+          <p class="ct-title">${title.title}</p>
+          <p class="ct-msg">${title.msg}</p>
+        </div>
+      </div>` : `
+      <div class="current-title-card no-title">
+        <div class="ct-icon">🥚</div>
+        <div class="ct-info">
+          <p class="ct-label">いまの しょうごう</p>
+          <p class="ct-title">まだ しょうごうが ないよ</p>
+          <p class="ct-msg">バッジを あつめて しょうごうを もらおう！</p>
+        </div>
+      </div>`}
+
+      ${next ? `
+      <div class="next-title-bar">
+        <span>つぎの しょうごう「${next.title}」まで</span>
+        <span class="next-need">あと <b>${next.need - earned.length}</b> こ</span>
+        <div class="next-title-progress-wrap">
+          <div class="next-title-progress-bar" style="width:${Math.min(earned.length/next.need*100,100).toFixed(0)}%"></div>
+        </div>
+      </div>` : `
+      <div class="next-title-bar complete">🎉 すべての しょうごうを かいほう！！</div>`}
+
+      <h3 class="section-title">しょうごう ロードマップ</h3>
+      <div class="title-roadmap">${titleRoadmap}</div>
+
+      <h3 class="section-title">バッジ いちらん <span class="badge-count-text">${earned.length}/${BADGE_DEFS.length}</span></h3>
+      <div class="badge-cards-grid">${badgeGrid}</div>
+
+      <h3 class="section-title">きろく</h3>
+      <div class="stats-grid">
+        <div class="stat-item"><span class="stat-val">${stats.totalCorrect||0}</span><span class="stat-label">せいかい</span></div>
+        <div class="stat-item"><span class="stat-val">${stats.totalGames||0}</span><span class="stat-label">プレイ回数</span></div>
+        <div class="stat-item"><span class="stat-val">${stats.maxComboEver||0}</span><span class="stat-label">さいこうコンボ</span></div>
+        <div class="stat-item"><span class="stat-val">${stats.perfectClears||0}</span><span class="stat-label">ぜんもんせいかい</span></div>
+      </div>
+
+      <button class="action-btn ghost" style="width:100%;margin-top:8px;" onclick="renderMenu()">メニューへもどる</button>
+    </div>
+  `;
 }
 
 // ===============================
