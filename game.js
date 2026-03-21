@@ -206,10 +206,15 @@ function renderMenu() {
           <div class="mode-name">あんきモード</div>
           <div class="mode-desc">カードをめくって<br>おぼえよう</div>
         </button>
-        <button class="mode-card game-card" onclick="startGame()">
+        <button class="mode-card game-card" onclick="startGame('normal')">
           <div class="mode-icon">🎮</div>
-          <div class="mode-name">ゲームモード</div>
-          <div class="mode-desc">もんだいに こたえて<br>スコアをかせごう</div>
+          <div class="mode-name">ゲーム①</div>
+          <div class="mode-desc">にほんご→えいご<br>4たくで こたえよう</div>
+        </button>
+        <button class="mode-card reverse-card" onclick="startGame('reverse')">
+          <div class="mode-icon">🔄</div>
+          <div class="mode-name">ゲーム②</div>
+          <div class="mode-desc">えいご→にほんご<br>4たくで こたえよう</div>
         </button>
         <button class="mode-card typing-card" onclick="startTyping()" style="grid-column:1/-1;">
           <div class="mode-icon">⌨️</div>
@@ -305,11 +310,13 @@ function renderStudyComplete() {
 // ===============================
 const TOTAL_Q = 10;
 const MAX_LIVES = 3;
+let gameDirection = 'normal'; // 'normal': 日本語→英語, 'reverse': 英語→日本語
 
-function startGame() {
+function startGame(direction = 'normal') {
   applyFilter(selectedCategory);
   if (filteredWords.length < 4) { alert('ゲームには4語以上必要です'); return; }
   currentMode = 'game';
+  gameDirection = direction;
   score = 0; lives = MAX_LIVES; answeredCount = 0;
   totalQuestions = Math.min(TOTAL_Q, filteredWords.length);
   gameQueue = shuffle([...filteredWords]).slice(0, totalQuestions);
@@ -333,6 +340,31 @@ function renderGameQuestion(choices) {
     `<span class="heart ${i < lives ? 'active' : 'lost'}">♥</span>`
   ).join('');
 
+  const isReverse = gameDirection === 'reverse';
+
+  // 問題文と選択肢の表示を direction によって切り替え
+  const questionHTML = isReverse
+    ? `<p class="question-label">にほんごは　なに？</p>
+       <div class="question-word">
+         <span class="q-kanji" style="letter-spacing:2px;">${currentQuestion.english}</span>
+       </div>
+       <button class="sound-btn" onclick="speak('${currentQuestion.english}')">🔊 もう一度きく</button>`
+    : `<p class="question-label">えいごは　なに？</p>
+       <div class="question-word">
+         <span class="q-kanji">${currentQuestion.kanji}</span>
+       </div>
+       <p class="question-sub">${currentQuestion.hiragana}</p>
+       <button class="sound-btn" onclick="speak('${currentQuestion.english}')">🔊 もう一度きく</button>`;
+
+  const choicesHTML = choices.map(c => {
+    const label = isReverse ? c.kanji : c.english;
+    return `<button class="choice-btn" data-id="${c.id}" onclick="checkAnswer(${c.id}, this)">
+              <span class="choice-text">${label}</span>
+            </button>`;
+  }).join('');
+
+  const choiceLabel = isReverse ? 'にほんごを　えらんでね' : 'えいごを　えらんでね';
+
   document.getElementById('app').innerHTML = `
     <div class="game-screen">
       <div class="game-header">
@@ -346,26 +378,12 @@ function renderGameQuestion(choices) {
         <div class="hearts-wrap">${hearts}</div>
         <div class="score-badge">⭐ ${score}</div>
       </div>
-      <div class="question-area">
-        <p class="question-label">えいごは　なに？</p>
-        <div class="question-word">
-          <span class="q-kanji">${currentQuestion.kanji}</span>
-        </div>
-        <p class="question-sub">${currentQuestion.hiragana}</p>
-        <button class="sound-btn" onclick="speak('${currentQuestion.english}')">🔊 もう一度きく</button>
-      </div>
-      <p class="choice-label">えいごを　えらんでね</p>
-      <div class="choices-grid">
-        ${choices.map(c => `
-          <button class="choice-btn" data-id="${c.id}" onclick="checkAnswer(${c.id}, this)">
-            <span class="choice-text">${c.english}</span>
-          </button>
-        `).join('')}
-      </div>
+      <div class="question-area">${questionHTML}</div>
+      <p class="choice-label">${choiceLabel}</p>
+      <div class="choices-grid">${choicesHTML}</div>
       <button class="skip-btn" onclick="skipQuestion()">わからない</button>
     </div>
   `;
-  // 問題表示時に英語を読み上げ
   setTimeout(() => speak(currentQuestion.english), 300);
 }
 
@@ -503,11 +521,15 @@ function checkTyping() {
   const userInput = inp.value.trim();
   if (!userInput) return;
 
-  // 正解判定：kanji または hiragana と一致で正解
-  const correct1 = currentQuestion.kanji.replace(/[・。、]/g, '');
-  const correct2 = currentQuestion.hiragana.replace(/[・。、]/g, '');
-  const input    = userInput.replace(/[・。、\s]/g, '');
-  const isCorrect = input === correct1 || input === correct2;
+  // 正解判定：kanji・hiragana を「・」「、」「（」で分割し、どれか1つと一致で正解
+  const normalize = s => s.replace(/\s/g, '');
+  const input = normalize(userInput);
+  const candidates = [
+    ...currentQuestion.kanji.split(/[・、（]/),
+    ...currentQuestion.hiragana.split(/[・、（]/),
+  ].map(s => normalize(s.replace(/）.*$/, ''))).filter(s => s.length > 0);
+
+  const isCorrect = candidates.some(c => input === c);
 
   inp.disabled = true;
   document.querySelector('.typing-submit-btn').disabled = true;
