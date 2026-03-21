@@ -155,6 +155,13 @@
     .badge-section-label { font-size: .8rem; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
     .badge-grid { display: flex; flex-wrap: wrap; gap: 8px; }
     .badge-chip { font-size: 1.8rem; cursor: default; }
+
+    /* ===== リトライメニュー ===== */
+    .retry-label { font-size: .85rem; color: var(--text-muted); font-weight: 700; text-align: center; margin-bottom: 8px; }
+    .retry-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .retry-btn { background: var(--surface); border: 2px solid var(--surface2); border-radius: var(--radius-sm); padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font-family: var(--font); font-size: 1rem; font-weight: 800; color: var(--text); transition: transform .15s, border-color .15s, background .15s; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+    .retry-btn:hover { transform: translateY(-3px); border-color: var(--blue); background: var(--surface2); }
+    .retry-btn span { font-size: .7rem; font-weight: 600; color: var(--text-muted); }
     .typing-area { width: 100%; display: flex; gap: 10px; margin-bottom: 12px; }
     .typing-input { flex: 1; background: var(--surface); border: 2px solid var(--surface2); border-radius: var(--radius-sm); color: var(--text); font-family: var(--font); font-size: 1.2rem; font-weight: 700; padding: 14px 16px; outline: none; transition: border-color .2s; }
     .typing-input:focus { border-color: var(--blue); }
