@@ -136,6 +136,72 @@ let lives = 3;
 let totalQuestions = 0;
 let answeredCount = 0;
 let selectedCategory = 'all';
+let combo = 0; // 連続正解数
+let maxCombo = 0; // セッション最大コンボ
+
+// ===============================
+//  バッジ・実績（localStorage）
+// ===============================
+const BADGE_KEY = 'wordquest_badges';
+const STATS_KEY = 'wordquest_stats';
+
+const BADGE_DEFS = [
+  { id: 'first_correct',  icon: '⭐', name: 'はじめての せいかい！',  cond: s => s.totalCorrect >= 1 },
+  { id: 'correct_10',     icon: '🌟', name: '10もん せいかい！',       cond: s => s.totalCorrect >= 10 },
+  { id: 'correct_50',     icon: '💫', name: '50もん せいかい！',       cond: s => s.totalCorrect >= 50 },
+  { id: 'correct_100',    icon: '🏆', name: '100もん せいかい！',      cond: s => s.totalCorrect >= 100 },
+  { id: 'combo_3',        icon: '🔥', name: '3れんぞく せいかい！',    cond: s => s.maxComboEver >= 3 },
+  { id: 'combo_5',        icon: '🌈', name: '5れんぞく せいかい！',    cond: s => s.maxComboEver >= 5 },
+  { id: 'combo_10',       icon: '⚡', name: '10れんぞく せいかい！',   cond: s => s.maxComboEver >= 10 },
+  { id: 'perfect',        icon: '💎', name: 'ぜんもん せいかい！',     cond: s => s.perfectClears >= 1 },
+  { id: 'play_5',         icon: '🎮', name: '5かい あそんだ！',        cond: s => s.totalGames >= 5 },
+  { id: 'play_20',        icon: '👑', name: '20かい あそんだ！',       cond: s => s.totalGames >= 20 },
+];
+
+function loadStats() {
+  try { return JSON.parse(localStorage.getItem(STATS_KEY) || '{}'); } catch { return {}; }
+}
+function saveStats(stats) {
+  localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+}
+function loadBadges() {
+  try { return JSON.parse(localStorage.getItem(BADGE_KEY) || '[]'); } catch { return []; }
+}
+function saveBadges(badges) {
+  localStorage.setItem(BADGE_KEY, JSON.stringify(badges));
+}
+
+function checkNewBadges(stats) {
+  const earned = loadBadges();
+  const newOnes = [];
+  for (const def of BADGE_DEFS) {
+    if (!earned.includes(def.id) && def.cond(stats)) {
+      earned.push(def.id);
+      newOnes.push(def);
+    }
+  }
+  if (newOnes.length) saveBadges(earned);
+  return newOnes;
+}
+
+function addCorrectStats(isPerfect = false) {
+  const stats = loadStats();
+  stats.totalCorrect  = (stats.totalCorrect  || 0) + 1;
+  stats.totalGames    = (stats.totalGames    || 0);
+  stats.maxComboEver  = Math.max(stats.maxComboEver || 0, combo);
+  stats.perfectClears = (stats.perfectClears || 0) + (isPerfect ? 1 : 0);
+  saveStats(stats);
+  return checkNewBadges(stats);
+}
+
+function addGameStats(isPerfect) {
+  const stats = loadStats();
+  stats.totalGames    = (stats.totalGames    || 0) + 1;
+  stats.maxComboEver  = Math.max(stats.maxComboEver || 0, maxCombo);
+  stats.perfectClears = (stats.perfectClears || 0) + (isPerfect ? 1 : 0);
+  saveStats(stats);
+  return checkNewBadges(stats);
+}
 
 // ===============================
 //  まちがいノート（localStorage）
@@ -348,6 +414,7 @@ function startGame(direction = 'normal') {
   currentMode = 'game';
   gameDirection = direction;
   score = 0; lives = MAX_LIVES; answeredCount = 0;
+  combo = 0; maxCombo = 0;
   totalQuestions = Math.min(TOTAL_Q, filteredWords.length);
   gameQueue = shuffle([...filteredWords]).slice(0, totalQuestions);
   nextQuestion();
@@ -425,12 +492,19 @@ function checkAnswer(chosenId, btn) {
   });
   if (isCorrect) {
     score += 10;
+    combo++;
+    maxCombo = Math.max(maxCombo, combo);
+    if (combo >= 3) score += 5; // コンボボーナス
     speak(currentQuestion.english);
-    showFeedback(true, `せいかい！ +10てん 🎉`);
+    showFeedback(true, combo >= 3 ? `${combo}れんぞく！ +${combo>=3?15:10}てん🔥` : `せいかい！ +10てん 🎉`);
+    showCombo(combo);
+    const newBadges = addCorrectStats();
+    if (newBadges.length) setTimeout(() => showBadgeNotification(newBadges), 400);
     answeredCount++;
     setTimeout(nextQuestion, 1100);
   } else {
     btn.classList.add('wrong');
+    combo = 0;
     lives--;
     saveMistake(currentQuestion.id);
     speak(currentQuestion.english, 0.75);
@@ -445,6 +519,7 @@ function skipQuestion() {
     b.disabled = true;
     if (Number(b.dataset.id) === currentQuestion.id) b.classList.add('correct');
   });
+  combo = 0;
   lives--;
   saveMistake(currentQuestion.id);
   speak(currentQuestion.english, 0.75);
@@ -462,25 +537,66 @@ function showFeedback(ok, msg) {
   setTimeout(() => fb.remove(), 1300);
 }
 
+function showCombo(n) {
+  document.querySelectorAll('.combo-toast').forEach(e => e.remove());
+  if (n < 3) return;
+  const el = document.createElement('div');
+  el.className = 'combo-toast';
+  const labels = {3:'🔥 3コンボ！', 4:'🔥🔥 4コンボ！', 5:'🌈 5コンボ！！'};
+  el.textContent = labels[n] || `⚡ ${n}コンボ！！！`;
+  document.getElementById('app').appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+function showBadgeNotification(badges) {
+  badges.forEach((badge, i) => {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'badge-toast';
+      el.innerHTML = `<span class="badge-toast-icon">${badge.icon}</span><span>バッジゲット！<br><b>${badge.name}</b></span>`;
+      document.getElementById('app').appendChild(el);
+      setTimeout(() => el.remove(), 2500);
+    }, i * 600);
+  });
+}
+
 function renderGameOver() {
   const cleared = lives > 0;
-  const rank = score >= totalQuestions*9 ? '🥇' : score >= totalQuestions*6 ? '🥈' : '🥉';
+  const isPerfect = cleared && score === totalQuestions * (combo >= 3 ? 15 : 10);
+  const rank = score >= totalQuestions*12 ? '🥇' : score >= totalQuestions*8 ? '🥈' : '🥉';
+  const newBadges = addGameStats(isPerfect);
+  const earnedBadges = loadBadges();
+  const badgeList = BADGE_DEFS.filter(d => earnedBadges.includes(d.id));
+
   document.getElementById('app').innerHTML = `
     <div class="gameover-screen">
+      ${cleared ? '<canvas id="fireworksCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:50;width:100%;height:100%;"></canvas>' : ''}
       <div class="go-icon">${cleared ? '🎊' : '😢'}</div>
-      <h2 class="go-title">${cleared ? 'クリア！' : 'ゲームオーバー'}</h2>
+      <h2 class="go-title">${cleared ? 'クリア！すごい！' : 'ゲームオーバー'}</h2>
       <div class="go-score-block">
         <div class="go-rank">${rank}</div>
         <div class="go-score">${score} <span class="go-score-unit">てん</span></div>
-        <div class="go-detail">${answeredCount}もん中 ${Math.round(score/10)}せいかい</div>
+        <div class="go-detail">${answeredCount}もん中 ${Math.round(score/10)}せいかい　さいこうコンボ ${maxCombo}</div>
       </div>
+      ${newBadges.length ? `
+        <div class="new-badges">
+          <p class="new-badge-label">🎉 あたらしい バッジ！</p>
+          ${newBadges.map(b => `<div class="badge-item new">${b.icon} ${b.name}</div>`).join('')}
+        </div>` : ''}
+      ${badgeList.length ? `
+        <div class="all-badges">
+          <p class="badge-section-label">もっているバッジ</p>
+          <div class="badge-grid">${badgeList.map(b => `<span class="badge-chip" title="${b.name}">${b.icon}</span>`).join('')}</div>
+        </div>` : ''}
       <div class="complete-btns">
-        <button class="action-btn primary"   onclick="startGame()">もう一度</button>
+        <button class="action-btn primary"   onclick="startGame(gameDirection)">もう一度</button>
         <button class="action-btn secondary" onclick="startStudy()">あんきへ</button>
         <button class="action-btn ghost"     onclick="renderMenu()">メニュー</button>
       </div>
     </div>
   `;
+  if (cleared) setTimeout(launchFireworks, 100);
+  if (newBadges.length) setTimeout(() => showBadgeNotification(newBadges), 800);
 }
 
 // ===============================
@@ -596,15 +712,30 @@ function skipTyping() {
 function renderTypingOver() {
   const cleared = lives > 0;
   const rank = score >= totalQuestions*9 ? '🥇' : score >= totalQuestions*6 ? '🥈' : '🥉';
+  const newBadges = addGameStats(cleared && lives === MAX_LIVES);
+  const earnedBadges = loadBadges();
+  const badgeList = BADGE_DEFS.filter(d => earnedBadges.includes(d.id));
+
   document.getElementById('app').innerHTML = `
     <div class="gameover-screen">
+      ${cleared ? '<canvas id="fireworksCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:50;width:100%;height:100%;"></canvas>' : ''}
       <div class="go-icon">${cleared ? '🎊' : '😢'}</div>
-      <h2 class="go-title">${cleared ? 'クリア！' : 'ゲームオーバー'}</h2>
+      <h2 class="go-title">${cleared ? 'クリア！すごい！' : 'ゲームオーバー'}</h2>
       <div class="go-score-block">
         <div class="go-rank">${rank}</div>
         <div class="go-score">${score} <span class="go-score-unit">てん</span></div>
         <div class="go-detail">${answeredCount}もん中 ${Math.round(score/10)}せいかい</div>
       </div>
+      ${newBadges.length ? `
+        <div class="new-badges">
+          <p class="new-badge-label">🎉 あたらしい バッジ！</p>
+          ${newBadges.map(b => `<div class="badge-item new">${b.icon} ${b.name}</div>`).join('')}
+        </div>` : ''}
+      ${badgeList.length ? `
+        <div class="all-badges">
+          <p class="badge-section-label">もっているバッジ</p>
+          <div class="badge-grid">${badgeList.map(b => `<span class="badge-chip" title="${b.name}">${b.icon}</span>`).join('')}</div>
+        </div>` : ''}
       <div class="complete-btns">
         <button class="action-btn primary"   onclick="startTyping()">もう一度</button>
         <button class="action-btn secondary" onclick="startGame()">ゲームモードへ</button>
@@ -612,6 +743,8 @@ function renderTypingOver() {
       </div>
     </div>
   `;
+  if (cleared) setTimeout(launchFireworks, 100);
+  if (newBadges.length) setTimeout(() => showBadgeNotification(newBadges), 800);
 }
 
 // ===============================
@@ -699,6 +832,68 @@ function startMistakeTyping() {
   totalQuestions = Math.min(TOTAL_Q, filteredWords.length);
   gameQueue = filteredWords.slice(0, totalQuestions);
   nextTypingQuestion();
+}
+
+// ===============================
+//  花火・紙吹雪アニメーション
+// ===============================
+function launchFireworks() {
+  const canvas = document.getElementById('fireworksCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const colors = ['#58cc02','#ffc800','#1cb0f6','#ff4b4b','#ce82ff','#ff9f43','#ffffff'];
+
+  function createBurst(x, y) {
+    for (let i = 0; i < 60; i++) {
+      const angle = (Math.PI * 2 / 60) * i;
+      const speed = 3 + Math.random() * 5;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: 4 + Math.random() * 4,
+        decay: 0.015 + Math.random() * 0.01,
+      });
+    }
+  }
+
+  // 複数箇所で花火を打ち上げる
+  const positions = [
+    [canvas.width * 0.25, canvas.height * 0.3],
+    [canvas.width * 0.75, canvas.height * 0.25],
+    [canvas.width * 0.5,  canvas.height * 0.4],
+    [canvas.width * 0.2,  canvas.height * 0.5],
+    [canvas.width * 0.8,  canvas.height * 0.45],
+  ];
+  positions.forEach(([x, y], i) => setTimeout(() => createBurst(x, y), i * 250));
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.vy += 0.12; // 重力
+      p.vx *= 0.98;
+      p.alpha -= p.decay;
+      if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if (particles.length > 0) requestAnimationFrame(animate);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  animate();
 }
 
 // ===== ユーティリティ =====
