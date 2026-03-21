@@ -589,9 +589,14 @@ function renderGameOver() {
           <div class="badge-grid">${badgeList.map(b => `<span class="badge-chip" title="${b.name}">${b.icon}</span>`).join('')}</div>
         </div>` : ''}
       <div class="complete-btns">
-        <button class="action-btn primary"   onclick="startGame(gameDirection)">もう一度</button>
-        <button class="action-btn secondary" onclick="startStudy()">あんきへ</button>
-        <button class="action-btn ghost"     onclick="renderMenu()">メニュー</button>
+        <p class="retry-label">もう一度あそぶ</p>
+        <div class="retry-grid">
+          <button class="retry-btn" onclick="startGame('normal')">🎮 ゲーム①<span>にほんご→えいご</span></button>
+          <button class="retry-btn" onclick="startGame('reverse')">🔄 ゲーム②<span>えいご→にほんご</span></button>
+          <button class="retry-btn" onclick="startTyping()" style="grid-column:1/-1;">⌨️ タイピング<span>えいごをみてうちこむ</span></button>
+        </div>
+        <button class="action-btn secondary" onclick="startStudy()">🃏 あんきモードへ</button>
+        <button class="action-btn ghost"     onclick="renderMenu()">メニューへもどる</button>
       </div>
     </div>
   `;
@@ -737,9 +742,14 @@ function renderTypingOver() {
           <div class="badge-grid">${badgeList.map(b => `<span class="badge-chip" title="${b.name}">${b.icon}</span>`).join('')}</div>
         </div>` : ''}
       <div class="complete-btns">
-        <button class="action-btn primary"   onclick="startTyping()">もう一度</button>
-        <button class="action-btn secondary" onclick="startGame()">ゲームモードへ</button>
-        <button class="action-btn ghost"     onclick="renderMenu()">メニュー</button>
+        <p class="retry-label">もう一度あそぶ</p>
+        <div class="retry-grid">
+          <button class="retry-btn" onclick="startGame('normal')">🎮 ゲーム①<span>にほんご→えいご</span></button>
+          <button class="retry-btn" onclick="startGame('reverse')">🔄 ゲーム②<span>えいご→にほんご</span></button>
+          <button class="retry-btn" onclick="startTyping()" style="grid-column:1/-1;">⌨️ タイピング<span>えいごをみてうちこむ</span></button>
+        </div>
+        <button class="action-btn secondary" onclick="startStudy()">🃏 あんきモードへ</button>
+        <button class="action-btn ghost"     onclick="renderMenu()">メニューへもどる</button>
       </div>
     </div>
   `;
