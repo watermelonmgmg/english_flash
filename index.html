@@ -162,6 +162,64 @@
     .retry-btn { background: var(--surface); border: 2px solid var(--surface2); border-radius: var(--radius-sm); padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font-family: var(--font); font-size: 1rem; font-weight: 800; color: var(--text); transition: transform .15s, border-color .15s, background .15s; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
     .retry-btn:hover { transform: translateY(-3px); border-color: var(--blue); background: var(--surface2); }
     .retry-btn span { font-size: .7rem; font-weight: 600; color: var(--text-muted); }
+
+    /* ===== バッジメニューボタン ===== */
+    .badge-menu-btn { width:100%; background:var(--surface); border:2px solid var(--yellow); border-radius:var(--radius-sm); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-family:var(--font); transition:background .2s,transform .15s; }
+    .badge-menu-btn:hover { background:rgba(255,200,0,.08); transform:translateY(-2px); }
+    .badge-menu-left { display:flex; align-items:center; gap:8px; }
+    .current-title-icon { font-size:1.6rem; }
+    .current-title-text { font-size:.95rem; font-weight:800; color:var(--yellow); }
+    .badge-menu-right { display:flex; flex-direction:column; align-items:flex-end; font-size:.85rem; font-weight:700; color:var(--text-muted); gap:2px; }
+    .next-title-hint { font-size:.7rem; color:var(--text-muted); }
+
+    /* ===== バッジ画面 ===== */
+    .badge-page { width:100%; max-width:440px; display:flex; flex-direction:column; gap:16px; animation:fadeUp .4s ease both; }
+    .badge-page-header { display:flex; align-items:center; gap:12px; }
+    .badge-page-title { font-size:1.2rem; font-weight:900; }
+    .section-title { font-size:.9rem; font-weight:800; color:var(--text-muted); margin-top:4px; display:flex; align-items:center; gap:8px; }
+    .badge-count-text { background:var(--surface2); color:var(--blue2); font-size:.8rem; padding:2px 10px; border-radius:999px; }
+
+    /* 現在の称号カード */
+    .current-title-card { background:linear-gradient(135deg,rgba(255,200,0,.15),rgba(255,159,67,.08)); border:2px solid var(--yellow); border-radius:var(--radius); padding:20px; display:flex; align-items:center; gap:16px; }
+    .current-title-card.no-title { border-color:var(--surface2); background:var(--surface); }
+    .ct-icon { font-size:3rem; }
+    .ct-label { font-size:.75rem; color:var(--text-muted); font-weight:700; }
+    .ct-title { font-size:1.3rem; font-weight:900; color:var(--yellow); margin:2px 0; }
+    .ct-msg { font-size:.85rem; color:var(--text); font-weight:600; }
+
+    /* 次の称号プログレス */
+    .next-title-bar { width:100%; background:var(--surface); border-radius:var(--radius-sm); padding:12px 16px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:.85rem; font-weight:700; color:var(--text-muted); }
+    .next-title-bar.complete { color:var(--accent); border:2px solid var(--accent); background:rgba(88,204,2,.08); justify-content:center; }
+    .next-need { color:var(--blue2); margin-left:auto; }
+    .next-title-progress-wrap { width:100%; height:8px; background:var(--surface2); border-radius:999px; overflow:hidden; }
+    .next-title-progress-bar { height:100%; background:linear-gradient(90deg,var(--yellow),#ff9f43); border-radius:999px; transition:width .6s ease; }
+
+    /* 称号ロードマップ */
+    .title-roadmap { display:flex; flex-direction:column; gap:10px; }
+    .title-row { display:flex; align-items:flex-start; gap:12px; background:var(--surface); border-radius:var(--radius-sm); padding:14px; border:2px solid transparent; transition:border-color .2s; }
+    .title-row.unlocked { border-color:var(--yellow); background:rgba(255,200,0,.06); }
+    .title-row.locked { opacity:.5; }
+    .title-row-icon { font-size:2rem; min-width:2.5rem; text-align:center; }
+    .title-row-info { flex:1; display:flex; flex-direction:column; gap:2px; }
+    .title-row-name { font-size:1rem; font-weight:900; color:var(--text); }
+    .title-row-cond { font-size:.75rem; color:var(--text-muted); }
+    .title-row-msg { font-size:.8rem; color:var(--accent2); font-weight:600; margin-top:2px; }
+    .title-row-check { font-size:1.2rem; align-self:center; }
+
+    /* バッジカード一覧 */
+    .badge-cards-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .badge-card { background:var(--surface); border:2px solid var(--surface2); border-radius:var(--radius-sm); padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; transition:border-color .2s; }
+    .badge-card.got { border-color:var(--yellow); background:rgba(255,200,0,.06); }
+    .badge-card.notyet { opacity:.4; }
+    .badge-card-icon { font-size:2rem; }
+    .badge-card-name { font-size:.7rem; font-weight:700; color:var(--text-muted); line-height:1.3; }
+    .badge-card.got .badge-card-name { color:var(--text); }
+
+    /* 記録グリッド */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    .stat-item { background:var(--surface); border-radius:var(--radius-sm); padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .stat-val { font-size:1.4rem; font-weight:900; color:var(--blue2); }
+    .stat-label { font-size:.65rem; color:var(--text-muted); font-weight:700; text-align:center; }
     .typing-area { width: 100%; display: flex; gap: 10px; margin-bottom: 12px; }
     .typing-input { flex: 1; background: var(--surface); border: 2px solid var(--surface2); border-radius: var(--radius-sm); color: var(--text); font-family: var(--font); font-size: 1.2rem; font-weight: 700; padding: 14px 16px; outline: none; transition: border-color .2s; }
     .typing-input:focus { border-color: var(--blue); }
