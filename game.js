@@ -324,6 +324,8 @@ function renderPetPage() {
     </div>
   `;
 }
+
+function loadStats() {
   try { return JSON.parse(localStorage.getItem(STATS_KEY) || '{}'); } catch { return {}; }
 }
 function saveStats(stats) {
