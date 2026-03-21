@@ -274,12 +274,12 @@ if (window.speechSynthesis) {
 }
 
 function init() {
-  allWords = 
-    WORDS_ADJECTIVES;
-    WORDS_PLACES;
-    WORDS_SPORTS;
-  　WORDS_WEATHER;
-  　
+  allWords = [
+    ...WORDS_ADJECTIVES,
+    ...WORDS_PLACES,
+    ...WORDS_SPORTS,
+    ...WORDS_WEATHER,
+  ];
   filteredWords = [...allWords];
   renderMenu();
 }
