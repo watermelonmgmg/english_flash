@@ -10,3 +10,4 @@ const WORDS_WEATHER_SPORTS_PLACES = [
   { id: 204, english: "rainy",        kanji: "雨が降っている",hiragana: "あめがふっている",category: "weather", emoji: "🌧️" },
   { id: 205, english: "snowy",        kanji: "雪が降っている",hiragana: "ゆきがふっている",category: "weather", emoji: "❄️" },
   { id: 206, english: "windy",        kanji: "風が吹いている",hiragana: "かぜがふいている",category: "weather", emoji: "💨" },
+  ];
