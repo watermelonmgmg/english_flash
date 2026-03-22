@@ -146,16 +146,42 @@ const BADGE_KEY = 'wordquest_badges';
 const STATS_KEY = 'wordquest_stats';
 
 const BADGE_DEFS = [
-  { id: 'first_correct',  icon: '⭐', name: 'はじめての せいかい！',  cond: s => s.totalCorrect >= 1 },
-  { id: 'correct_10',     icon: '🌟', name: '10もん せいかい！',       cond: s => s.totalCorrect >= 10 },
-  { id: 'correct_50',     icon: '💫', name: '50もん せいかい！',       cond: s => s.totalCorrect >= 50 },
-  { id: 'correct_100',    icon: '🏆', name: '100もん せいかい！',      cond: s => s.totalCorrect >= 100 },
-  { id: 'combo_3',        icon: '🔥', name: '3れんぞく せいかい！',    cond: s => s.maxComboEver >= 3 },
-  { id: 'combo_5',        icon: '🌈', name: '5れんぞく せいかい！',    cond: s => s.maxComboEver >= 5 },
-  { id: 'combo_10',       icon: '⚡', name: '10れんぞく せいかい！',   cond: s => s.maxComboEver >= 10 },
-  { id: 'perfect',        icon: '💎', name: 'ぜんもん せいかい！',     cond: s => s.perfectClears >= 1 },
-  { id: 'play_5',         icon: '🎮', name: '5かい あそんだ！',        cond: s => s.totalGames >= 5 },
-  { id: 'play_20',        icon: '👑', name: '20かい あそんだ！',       cond: s => s.totalGames >= 20 },
+  // ===== 累計正解 =====
+  { id: 'first_correct',  icon: '⭐', name: 'はじめての せいかい！',   cond: s => s.totalCorrect >= 1 },
+  { id: 'correct_10',     icon: '🌟', name: '10もん せいかい！',        cond: s => s.totalCorrect >= 10 },
+  { id: 'correct_50',     icon: '💫', name: '50もん せいかい！',        cond: s => s.totalCorrect >= 50 },
+  { id: 'correct_100',    icon: '🏆', name: '100もん せいかい！',       cond: s => s.totalCorrect >= 100 },
+
+  // ===== コンボ =====
+  { id: 'combo_3',        icon: '🔥', name: '3れんぞく せいかい！',     cond: s => s.maxComboEver >= 3 },
+  { id: 'combo_5',        icon: '🌈', name: '5れんぞく せいかい！',     cond: s => s.maxComboEver >= 5 },
+  { id: 'combo_10',       icon: '⚡', name: '10れんぞく せいかい！',    cond: s => s.maxComboEver >= 10 },
+
+  // ===== 全問正解・プレイ回数 =====
+  { id: 'perfect',        icon: '💎', name: 'ぜんもん せいかい！',      cond: s => s.perfectClears >= 1 },
+  { id: 'play_5',         icon: '🎮', name: '5かい あそんだ！',         cond: s => s.totalGames >= 5 },
+  { id: 'play_20',        icon: '👑', name: '20かい あそんだ！',        cond: s => s.totalGames >= 20 },
+
+  // ===== モード別 =====
+  { id: 'mode_normal',    icon: '🎯', name: 'ゲーム①を クリア！',       cond: s => s.normalClears >= 1 },
+  { id: 'mode_reverse',   icon: '🔄', name: 'ゲーム②を クリア！',       cond: s => s.reverseClears >= 1 },
+  { id: 'mode_typing',    icon: '⌨️', name: 'タイピングを クリア！',    cond: s => s.typingClears >= 1 },
+  { id: 'all_modes',      icon: '🌐', name: '3モード ぜんぶ クリア！',   cond: s => s.normalClears >= 1 && s.reverseClears >= 1 && s.typingClears >= 1 },
+
+  // ===== カテゴリ別（全カテゴリで1回クリア） =====
+  { id: 'cat_adjectives', icon: '📝', name: 'けいようし マスター！',     cond: s => (s.catClears||{}).adjectives >= 1 },
+  { id: 'cat_places',     icon: '🏠', name: 'ばしょ マスター！',         cond: s => (s.catClears||{}).places >= 1 },
+  { id: 'cat_sports',     icon: '⚽', name: 'スポーツ マスター！',       cond: s => (s.catClears||{}).sports >= 1 },
+  { id: 'cat_weather',    icon: '🌤️', name: 'てんき マスター！',         cond: s => (s.catClears||{}).weather >= 1 },
+  { id: 'cat_all',        icon: '🌍', name: 'ぜんカテゴリ マスター！',   cond: s => {
+    const c = s.catClears || {};
+    return c.adjectives >= 1 && c.places >= 1 && c.sports >= 1 && c.weather >= 1;
+  }},
+
+  // ===== まちがい系（あきらめない！） =====
+  { id: 'retry_5',        icon: '💪', name: 'あきらめない！ 5かい チャレンジ！', cond: s => s.totalRetries >= 5 },
+  { id: 'retry_20',       icon: '🦾', name: 'ど根性！ 20かい チャレンジ！',      cond: s => s.totalRetries >= 20 },
+  { id: 'retry_50',       icon: '🔱', name: 'つよい心！ 50かい チャレンジ！',    cond: s => s.totalRetries >= 50 },
 ];
 
 // 称号：バッジ獲得数に応じて解放
@@ -364,11 +390,33 @@ function addCorrectStats(isPerfect = false) {
   return checkNewBadges(stats);
 }
 
-function addGameStats(isPerfect) {
+function addGameStats(isPerfect, mode = '', category = 'all') {
   const stats = loadStats();
   stats.totalGames    = (stats.totalGames    || 0) + 1;
   stats.maxComboEver  = Math.max(stats.maxComboEver || 0, maxCombo);
   stats.perfectClears = (stats.perfectClears || 0) + (isPerfect ? 1 : 0);
+
+  // モード別クリア記録（クリアしたときだけ）
+  if (isPerfect || lives > 0) {
+    if (mode === 'normal')  stats.normalClears  = (stats.normalClears  || 0) + 1;
+    if (mode === 'reverse') stats.reverseClears = (stats.reverseClears || 0) + 1;
+    if (mode === 'typing')  stats.typingClears  = (stats.typingClears  || 0) + 1;
+
+    // カテゴリ別クリア記録
+    if (category && category !== 'all') {
+      if (!stats.catClears) stats.catClears = {};
+      stats.catClears[category] = (stats.catClears[category] || 0) + 1;
+    }
+  }
+
+  saveStats(stats);
+  return checkNewBadges(stats);
+}
+
+// まちがい・リトライ記録
+function addRetryStats() {
+  const stats = loadStats();
+  stats.totalRetries = (stats.totalRetries || 0) + 1;
   saveStats(stats);
   return checkNewBadges(stats);
 }
@@ -400,14 +448,13 @@ function getMistakeCount() {
 }
 
 // ===== 音声読み上げ =====
-function speak(text, rate = 0.85) {
+function speak(text, rate = 0.65) {
   if (!window.speechSynthesis) return;
   speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = 'en-US';
   utter.rate = rate;
   utter.pitch = 1.1;
-  // 英語音声を優先して選択
   const voices = speechSynthesis.getVoices();
   const enVoice = voices.find(v => v.lang.startsWith('en'));
   if (enVoice) utter.voice = enVoice;
@@ -423,9 +470,9 @@ if (window.speechSynthesis) {
 function init() {
   allWords = [
     ...WORDS_ADJECTIVES,
-    ...WORDS_PLACES,
-    ...WORDS_SPORTS,
-    ...WORDS_WEATHER,
+    ...(typeof WORDS_PLACES  !== 'undefined' ? WORDS_PLACES  : []),
+    ...(typeof WORDS_SPORTS  !== 'undefined' ? WORDS_SPORTS  : []),
+    ...(typeof WORDS_WEATHER !== 'undefined' ? WORDS_WEATHER : []),
   ];
   filteredWords = [...allWords];
   renderMenu();
@@ -704,9 +751,12 @@ function checkAnswer(chosenId, btn) {
     combo = 0;
     lives--;
     saveMistake(currentQuestion.id);
-    speak(currentQuestion.english, 0.75);
+    speak(currentQuestion.english, 0.6);
     showFeedback(false, `こたえは「${currentQuestion.english}」だよ！`);
     answeredCount++;
+    // まちがいバッジ用にリトライ記録
+    const retryBadges = addRetryStats();
+    if (retryBadges.length) setTimeout(() => showBadgeNotification(retryBadges), 400);
     setTimeout(lives <= 0 ? renderGameOver : nextQuestion, 1400);
   }
 }
@@ -719,9 +769,11 @@ function skipQuestion() {
   combo = 0;
   lives--;
   saveMistake(currentQuestion.id);
-  speak(currentQuestion.english, 0.75);
+  speak(currentQuestion.english, 0.6);
   showFeedback(false, `こたえは「${currentQuestion.english}」だよ！`);
   answeredCount++;
+  const retryBadges = addRetryStats();
+  if (retryBadges.length) setTimeout(() => showBadgeNotification(retryBadges), 400);
   setTimeout(lives <= 0 ? renderGameOver : nextQuestion, 1400);
 }
 
@@ -775,7 +827,7 @@ function renderGameOver() {
   const cleared = lives > 0;
   const isPerfect = cleared && score === totalQuestions * (combo >= 3 ? 15 : 10);
   const rank = score >= totalQuestions*12 ? '🥇' : score >= totalQuestions*8 ? '🥈' : '🥉';
-  const newBadges = addGameStats(isPerfect);
+  const newBadges = addGameStats(isPerfect, gameDirection, selectedCategory);
   const earnedBadges = loadBadges();
   const badgeList = BADGE_DEFS.filter(d => earnedBadges.includes(d.id));
 
@@ -910,9 +962,11 @@ function checkTyping() {
     inp.classList.add('input-wrong');
     lives--;
     saveMistake(currentQuestion.id);
-    speak(currentQuestion.english, 0.75);
+    speak(currentQuestion.english, 0.6);
     showFeedback(false, `こたえは「${currentQuestion.kanji}（${currentQuestion.hiragana}）」だよ！`);
     answeredCount++;
+    const retryBadges = addRetryStats();
+    if (retryBadges.length) setTimeout(() => showBadgeNotification(retryBadges), 400);
     setTimeout(lives <= 0 ? renderTypingOver : nextTypingQuestion, 1800);
   }
 }
@@ -920,16 +974,18 @@ function checkTyping() {
 function skipTyping() {
   lives--;
   saveMistake(currentQuestion.id);
-  speak(currentQuestion.english, 0.75);
+  speak(currentQuestion.english, 0.6);
   showFeedback(false, `こたえは「${currentQuestion.kanji}（${currentQuestion.hiragana}）」だよ！`);
   answeredCount++;
+  const retryBadges = addRetryStats();
+  if (retryBadges.length) setTimeout(() => showBadgeNotification(retryBadges), 400);
   setTimeout(lives <= 0 ? renderTypingOver : nextTypingQuestion, 1800);
 }
 
 function renderTypingOver() {
   const cleared = lives > 0;
   const rank = score >= totalQuestions*9 ? '🥇' : score >= totalQuestions*6 ? '🥈' : '🥉';
-  const newBadges = addGameStats(cleared && lives === MAX_LIVES);
+  const newBadges = addGameStats(cleared && lives === MAX_LIVES, 'typing', selectedCategory);
   const earnedBadges = loadBadges();
   const badgeList = BADGE_DEFS.filter(d => earnedBadges.includes(d.id));
 
