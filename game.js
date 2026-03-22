@@ -692,13 +692,14 @@ function renderGameQuestion(choices) {
        <button class="sound-btn" onclick="speak('${currentQuestion.english}')">🔊 もう一度きく</button>`
     : `<p class="question-label">えいごは　なに？</p>
        <div class="question-word">
-         <span class="q-kanji">${currentQuestion.kanji}</span>
+         <ruby class="q-kanji">${currentQuestion.kanji}<rt>${currentQuestion.hiragana}</rt></ruby>
        </div>
-       <p class="question-sub">${currentQuestion.hiragana}</p>
        <button class="sound-btn" onclick="speak('${currentQuestion.english}')">🔊 もう一度きく</button>`;
 
   const choicesHTML = choices.map(c => {
-    const label = isReverse ? c.kanji : c.english;
+    const label = isReverse
+      ? `<ruby>${c.kanji}<rt>${c.hiragana}</rt></ruby>`
+      : c.english;
     return `<button class="choice-btn" data-id="${c.id}" onclick="checkAnswer(${c.id}, this)">
               <span class="choice-text">${label}</span>
             </button>`;
@@ -1282,6 +1283,8 @@ function renderReadingPage() {
 
       <div class="reading-nav-btns">
         <button class="action-btn repeat-btn" onclick="startRepeat()">🎤 リピート れんしゅう</button>
+        <button class="action-btn primary" onclick="startBlanks()">✍️ あなうめ もんだい</button>
+        <button class="action-btn secondary" onclick="startQuestions()">❓ ないよう もんだい</button>
       </div>
 
       <div id="wordPopup" class="word-popup" style="display:none;"></div>
