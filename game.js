@@ -213,13 +213,14 @@ function getNextTitle() {
 const PET_KEY = 'wordquest_pet';
 
 const PET_STAGES = [
-  { need: 0,   emoji: '🥚',  name: 'たまご',           msg: 'まだ　うまれていないよ…' },
-  { need: 10,  emoji: '🐣',  name: 'うまれたて',        msg: 'うまれたよ！よろしくね！' },
-  { need: 30,  emoji: '🐥',  name: 'ひよこ',           msg: 'すこし　おおきくなったよ！' },
-  { need: 60,  emoji: '🐤',  name: 'そだちざかり',      msg: 'どんどん　つよくなってるよ！' },
-  { need: 100, emoji: '🐦',  name: 'こどり',           msg: 'もう　こんなに　そだったね！' },
-  { need: 150, emoji: '🦅',  name: 'おおとり',         msg: 'すごい！　おおきなとりになったよ！' },
-  { need: 200, emoji: '🦄',  name: 'でんせつのいきもの', msg: '✨ きみは　でんせつの　えいごマスターだ！！' },
+  { need: 0,    emoji: '🥚',  name: 'たまご',            msg: 'まだ　うまれていないよ…' },
+  { need: 30,   emoji: '🐣',  name: 'うまれたて',         msg: 'うまれたよ！よろしくね！' },
+  { need: 80,   emoji: '🐥',  name: 'ひよこ',            msg: 'すこし　おおきくなったよ！' },
+  { need: 200,  emoji: '🐤',  name: 'そだちざかり',       msg: 'どんどん　つよくなってるよ！' },
+  { need: 400,  emoji: '🐦',  name: 'こどり',            msg: 'もう　こんなに　そだったね！' },
+  { need: 700,  emoji: '🦅',  name: 'おおとり',          msg: 'すごい！　おおきなとりになったよ！' },
+  { need: 1000, emoji: '🐉',  name: 'りゅう',            msg: '🔥 つよいりゅうに　なったよ！！' },
+  { need: 1500, emoji: '🦄',  name: 'でんせつのいきもの', msg: '✨ きみは　でんせつの　えいごマスターだ！！' },
 ];
 
 function loadPet() {
@@ -1283,6 +1284,8 @@ function renderReadingPage() {
 
       <div class="reading-nav-btns">
         <button class="action-btn repeat-btn" onclick="startRepeat()">🎤 リピート れんしゅう</button>
+        <button class="action-btn primary" onclick="startBlanks()">✍️ あなうめ もんだい</button>
+        <button class="action-btn secondary" onclick="startQuestions()">❓ ないよう もんだい</button>
       </div>
 
       <div id="wordPopup" class="word-popup" style="display:none;"></div>
