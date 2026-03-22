@@ -448,7 +448,7 @@ function getMistakeCount() {
 }
 
 // ===== 音声読み上げ =====
-function speak(text, rate = 0.45) {
+function speak(text, rate = 0.65) {
   if (!window.speechSynthesis) return;
   speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
