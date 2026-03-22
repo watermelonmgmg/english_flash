@@ -111,6 +111,7 @@
     .question-word { display: flex; align-items: center; justify-content: center; gap: 12px; }
     .q-emoji { font-size: 2.4rem; }
     .q-kanji { font-size: 2.8rem; font-weight: 900; }
+    .q-kanji rt { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); }
     .question-sub { font-size: 1.1rem; color: var(--text-muted); font-weight: 600; margin-top: 8px; }
 
     .choice-label { font-size: .85rem; color: var(--text-muted); font-weight: 700; margin-bottom: 12px; align-self: flex-start; }
@@ -122,6 +123,7 @@
     .choice-btn.wrong   { border-color: var(--red)    !important; background: rgba(255,75,75,.15)  !important; animation: shake .4s ease; }
     .choice-emoji { font-size: 2rem; }
     .choice-text  { font-size: 1rem; font-weight: 800; }
+    .choice-text ruby rt { font-size: 0.65rem; font-weight: 600; color: var(--text-muted); }
     .skip-btn { background: none; border: none; color: var(--text-muted); font-family: var(--font); font-size: .9rem; font-weight: 700; cursor: pointer; padding: 8px 16px; border-radius: 999px; transition: color .2s, background .2s; }
     .skip-btn:hover { color: var(--text); background: var(--surface); }
     .sound-btn { background: var(--surface2); border: none; color: var(--blue2); font-family: var(--font); font-size: .85rem; font-weight: 700; cursor: pointer; padding: 8px 18px; border-radius: 999px; margin-top: 10px; transition: background .2s, transform .15s; }
@@ -363,11 +365,8 @@
 </head>
 <body>
   <div id="app"></div>
-　<script src="words/words_adjectives.js"></script>
-  <script src="words/words_PLACES.js"></script>
-  <script src="words/words_sports.js"></script>
-  <script src="words/words_weather.js"></script>
-  <script src="texts/texts_track53.js"></script>
+  <script src="words/words_adjectives.js"></script>
+  <script src="texts_track53.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
