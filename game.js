@@ -1,6 +1,7 @@
 // ===============================
 //  WordQuest - game.js
-//  単語データ＋ゲームロジック 統合版
+//  ※ localStorage 関係は js/storage.js へ移動済み
+//    （読み込み順: storage.js → game.js）
 // ===============================
 
 // ===== 英検5級 単語データ =====
@@ -136,39 +137,32 @@ let lives = 3;
 let totalQuestions = 0;
 let answeredCount = 0;
 let selectedCategory = 'all';
-let combo = 0; // 連続正解数
-let maxCombo = 0; // セッション最大コンボ
+let combo = 0;
+let maxCombo = 0;
 
 // ===============================
-//  バッジ・実績（localStorage）
+//  バッジ・実績
 // ===============================
-const BADGE_KEY = 'wordquest_badges';
-const STATS_KEY = 'wordquest_stats';
-
 const BADGE_DEFS = [
   // ===== 累計正解 =====
   { id: 'first_correct',  icon: '⭐', name: 'はじめての せいかい！',   cond: s => s.totalCorrect >= 1 },
   { id: 'correct_10',     icon: '🌟', name: '10もん せいかい！',        cond: s => s.totalCorrect >= 10 },
   { id: 'correct_50',     icon: '💫', name: '50もん せいかい！',        cond: s => s.totalCorrect >= 50 },
   { id: 'correct_100',    icon: '🏆', name: '100もん せいかい！',       cond: s => s.totalCorrect >= 100 },
-
   // ===== コンボ =====
   { id: 'combo_3',        icon: '🔥', name: '3れんぞく せいかい！',     cond: s => s.maxComboEver >= 3 },
   { id: 'combo_5',        icon: '🌈', name: '5れんぞく せいかい！',     cond: s => s.maxComboEver >= 5 },
   { id: 'combo_10',       icon: '⚡', name: '10れんぞく せいかい！',    cond: s => s.maxComboEver >= 10 },
-
   // ===== 全問正解・プレイ回数 =====
   { id: 'perfect',        icon: '💎', name: 'ぜんもん せいかい！',      cond: s => s.perfectClears >= 1 },
   { id: 'play_5',         icon: '🎮', name: '5かい あそんだ！',         cond: s => s.totalGames >= 5 },
   { id: 'play_20',        icon: '👑', name: '20かい あそんだ！',        cond: s => s.totalGames >= 20 },
-
   // ===== モード別 =====
   { id: 'mode_normal',    icon: '🎯', name: 'ゲーム①を クリア！',       cond: s => s.normalClears >= 1 },
   { id: 'mode_reverse',   icon: '🔄', name: 'ゲーム②を クリア！',       cond: s => s.reverseClears >= 1 },
   { id: 'mode_typing',    icon: '⌨️', name: 'タイピングを クリア！',    cond: s => s.typingClears >= 1 },
   { id: 'all_modes',      icon: '🌐', name: '3モード ぜんぶ クリア！',   cond: s => s.normalClears >= 1 && s.reverseClears >= 1 && s.typingClears >= 1 },
-
-  // ===== カテゴリ別（全カテゴリで1回クリア） =====
+  // ===== カテゴリ別 =====
   { id: 'cat_adjectives', icon: '📝', name: 'けいようし マスター！',     cond: s => (s.catClears||{}).adjectives >= 1 },
   { id: 'cat_places',     icon: '🏠', name: 'ばしょ マスター！',         cond: s => (s.catClears||{}).places >= 1 },
   { id: 'cat_sports',     icon: '⚽', name: 'スポーツ マスター！',       cond: s => (s.catClears||{}).sports >= 1 },
@@ -177,20 +171,19 @@ const BADGE_DEFS = [
     const c = s.catClears || {};
     return c.adjectives >= 1 && c.places >= 1 && c.sports >= 1 && c.weather >= 1;
   }},
-
-  // ===== まちがい系（あきらめない！） =====
+  // ===== まちがい系 =====
   { id: 'retry_5',        icon: '💪', name: 'あきらめない！ 5かい チャレンジ！', cond: s => s.totalRetries >= 5 },
   { id: 'retry_20',       icon: '🦾', name: 'ど根性！ 20かい チャレンジ！',      cond: s => s.totalRetries >= 20 },
   { id: 'retry_50',       icon: '🔱', name: 'つよい心！ 50かい チャレンジ！',    cond: s => s.totalRetries >= 50 },
 ];
 
-// 称号：バッジ獲得数に応じて解放
+// 称号
 const TITLE_DEFS = [
-  { need: 1,  icon: '🔰', title: 'えいごの たまご',      msg: 'よーし！はじめの いっぽだ！' },
-  { need: 3,  icon: '📚', title: 'えいごの まなびや',     msg: 'どんどん おぼえてるね！すごい！' },
-  { need: 5,  icon: '🌸', title: 'えいごの がんばりや',   msg: 'もう こんなに できるようになったね！' },
+  { need: 1,  icon: '🔰', title: 'えいごの たまご',        msg: 'よーし！はじめの いっぽだ！' },
+  { need: 3,  icon: '📚', title: 'えいごの まなびや',       msg: 'どんどん おぼえてるね！すごい！' },
+  { need: 5,  icon: '🌸', title: 'えいごの がんばりや',     msg: 'もう こんなに できるようになったね！' },
   { need: 7,  icon: '🚀', title: 'えいごの チャレンジャー', msg: 'きみは ほんとうに すごい！！' },
-  { need: 10, icon: '👑', title: 'えいごの マスター',     msg: '🎉 ぜんぶ クリア！きみは えいごの おうじゃだ！！' },
+  { need: 10, icon: '👑', title: 'えいごの マスター',       msg: '🎉 ぜんぶ クリア！きみは えいごの おうじゃだ！！' },
 ];
 
 function getCurrentTitle() {
@@ -208,27 +201,18 @@ function getNextTitle() {
 }
 
 // ===============================
-//  たまごそだて システム
+//  たまごそだて
 // ===============================
-const PET_KEY = 'wordquest_pet';
-
 const PET_STAGES = [
-  { need: 0,    emoji: '🥚',  name: 'たまご',            msg: 'まだ　うまれていないよ…' },
-  { need: 30,   emoji: '🐣',  name: 'うまれたて',         msg: 'うまれたよ！よろしくね！' },
-  { need: 80,   emoji: '🐥',  name: 'ひよこ',            msg: 'すこし　おおきくなったよ！' },
-  { need: 200,  emoji: '🐤',  name: 'そだちざかり',       msg: 'どんどん　つよくなってるよ！' },
-  { need: 400,  emoji: '🐦',  name: 'こどり',            msg: 'もう　こんなに　そだったね！' },
-  { need: 700,  emoji: '🦅',  name: 'おおとり',          msg: 'すごい！　おおきなとりになったよ！' },
-  { need: 1000, emoji: '🐉',  name: 'りゅう',            msg: '🔥 つよいりゅうに　なったよ！！' },
-  { need: 1500, emoji: '🦄',  name: 'でんせつのいきもの', msg: '✨ きみは　でんせつの　えいごマスターだ！！' },
+  { need: 0,    emoji: '🥚',  name: 'たまご',             msg: 'まだ　うまれていないよ…' },
+  { need: 30,   emoji: '🐣',  name: 'うまれたて',          msg: 'うまれたよ！よろしくね！' },
+  { need: 80,   emoji: '🐥',  name: 'ひよこ',             msg: 'すこし　おおきくなったよ！' },
+  { need: 200,  emoji: '🐤',  name: 'そだちざかり',        msg: 'どんどん　つよくなってるよ！' },
+  { need: 400,  emoji: '🐦',  name: 'こどり',             msg: 'もう　こんなに　そだったね！' },
+  { need: 700,  emoji: '🦅',  name: 'おおとり',           msg: 'すごい！　おおきなとりになったよ！' },
+  { need: 1000, emoji: '🐉',  name: 'りゅう',             msg: '🔥 つよいりゅうに　なったよ！！' },
+  { need: 1500, emoji: '🦄',  name: 'でんせつのいきもの',  msg: '✨ きみは　でんせつの　えいごマスターだ！！' },
 ];
-
-function loadPet() {
-  try { return JSON.parse(localStorage.getItem(PET_KEY) || '{}'); } catch { return {}; }
-}
-function savePet(pet) {
-  localStorage.setItem(PET_KEY, JSON.stringify(pet));
-}
 
 function getPetStage(totalCorrect) {
   let stage = PET_STAGES[0];
@@ -315,7 +299,6 @@ function renderPetPage() {
         <button class="back-btn" onclick="renderMenu()">← もどる</button>
         <h2 class="badge-page-title">🥚 そだてっこ</h2>
       </div>
-
       <div class="pet-big-card">
         <div class="pet-big-emoji">${stage.emoji}</div>
         <div class="pet-big-info">
@@ -324,7 +307,6 @@ function renderPetPage() {
           <p class="pet-big-msg">${stage.msg}</p>
         </div>
       </div>
-
       <div class="pet-name-edit">
         <input id="petNameInput" class="typing-input" type="text"
           placeholder="なまえをつけてね"
@@ -333,7 +315,6 @@ function renderPetPage() {
           autocomplete="off" spellcheck="false" />
         <button class="typing-submit-btn" onclick="setPetName(document.getElementById('petNameInput').value.trim() || '${stage.name}')">きめる</button>
       </div>
-
       ${next ? `
       <div class="next-title-bar">
         <span>つぎのすがた「${next.emoji} ${PET_STAGES.find(s=>s.need===next.need)?.name||''}」まで</span>
@@ -343,28 +324,16 @@ function renderPetPage() {
         </div>
       </div>` : `
       <div class="next-title-bar complete">✨ さいこうのすがたに なったよ！！</div>`}
-
       <h3 class="section-title">せいちょう ロードマップ</h3>
       <div class="title-roadmap">${stagesHTML}</div>
-
       <button class="action-btn ghost" style="width:100%;margin-top:8px;" onclick="renderMenu()">メニューへもどる</button>
     </div>
   `;
 }
 
-function loadStats() {
-  try { return JSON.parse(localStorage.getItem(STATS_KEY) || '{}'); } catch { return {}; }
-}
-function saveStats(stats) {
-  localStorage.setItem(STATS_KEY, JSON.stringify(stats));
-}
-function loadBadges() {
-  try { return JSON.parse(localStorage.getItem(BADGE_KEY) || '[]'); } catch { return []; }
-}
-function saveBadges(badges) {
-  localStorage.setItem(BADGE_KEY, JSON.stringify(badges));
-}
-
+// ===============================
+//  バッジチェック
+// ===============================
 function checkNewBadges(stats) {
   const earned = loadBadges();
   const newOnes = [];
@@ -396,56 +365,24 @@ function addGameStats(isPerfect, mode = '', category = 'all') {
   stats.totalGames    = (stats.totalGames    || 0) + 1;
   stats.maxComboEver  = Math.max(stats.maxComboEver || 0, maxCombo);
   stats.perfectClears = (stats.perfectClears || 0) + (isPerfect ? 1 : 0);
-
-  // モード別クリア記録（クリアしたときだけ）
   if (isPerfect || lives > 0) {
     if (mode === 'normal')  stats.normalClears  = (stats.normalClears  || 0) + 1;
     if (mode === 'reverse') stats.reverseClears = (stats.reverseClears || 0) + 1;
     if (mode === 'typing')  stats.typingClears  = (stats.typingClears  || 0) + 1;
-
-    // カテゴリ別クリア記録
     if (category && category !== 'all') {
       if (!stats.catClears) stats.catClears = {};
       stats.catClears[category] = (stats.catClears[category] || 0) + 1;
     }
   }
-
   saveStats(stats);
   return checkNewBadges(stats);
 }
 
-// まちがい・リトライ記録
 function addRetryStats() {
   const stats = loadStats();
   stats.totalRetries = (stats.totalRetries || 0) + 1;
   saveStats(stats);
   return checkNewBadges(stats);
-}
-
-// ===============================
-//  まちがいノート（localStorage）
-// ===============================
-const STORAGE_KEY = 'wordquest_mistakes';
-
-function loadMistakes() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-  } catch { return {}; }
-}
-
-function saveMistake(wordId) {
-  const mistakes = loadMistakes();
-  mistakes[wordId] = (mistakes[wordId] || 0) + 1;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(mistakes));
-}
-
-function getMistakeWords() {
-  const mistakes = loadMistakes();
-  return allWords.filter(w => mistakes[w.id]).sort((a, b) => (mistakes[b.id] || 0) - (mistakes[a.id] || 0));
-}
-
-function getMistakeCount() {
-  return Object.keys(loadMistakes()).filter(id => allWords.some(w => w.id === Number(id))).length;
 }
 
 // ===== 音声読み上げ =====
@@ -462,7 +399,6 @@ function speak(text, rate = 0.65) {
   speechSynthesis.speak(utter);
 }
 
-// 音声リスト読み込み待ち（Chrome対策）
 if (window.speechSynthesis) {
   speechSynthesis.getVoices();
   speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
@@ -651,7 +587,7 @@ function renderStudyComplete() {
 // ===============================
 const TOTAL_Q = 10;
 const MAX_LIVES = 3;
-let gameDirection = 'normal'; // 'normal': 日本語→英語, 'reverse': 英語→日本語
+let gameDirection = 'normal';
 
 function startGame(direction = 'normal') {
   applyFilter(selectedCategory);
@@ -684,7 +620,6 @@ function renderGameQuestion(choices) {
 
   const isReverse = gameDirection === 'reverse';
 
-  // 問題文と選択肢の表示を direction によって切り替え
   const questionHTML = isReverse
     ? `<p class="question-label">にほんごは　なに？</p>
        <div class="question-word">
@@ -740,7 +675,7 @@ function checkAnswer(chosenId, btn) {
     score += 10;
     combo++;
     maxCombo = Math.max(maxCombo, combo);
-    if (combo >= 3) score += 5; // コンボボーナス
+    if (combo >= 3) score += 5;
     speak(currentQuestion.english);
     showFeedback(true, combo >= 3 ? `${combo}れんぞく！ +${combo>=3?15:10}てん🔥` : `せいかい！ +10てん 🎉`);
     showCombo(combo);
@@ -756,7 +691,6 @@ function checkAnswer(chosenId, btn) {
     speak(currentQuestion.english, 0.6);
     showFeedback(false, `こたえは「${currentQuestion.english}」だよ！`);
     answeredCount++;
-    // まちがいバッジ用にリトライ記録
     const retryBadges = addRetryStats();
     if (retryBadges.length) setTimeout(() => showBadgeNotification(retryBadges), 400);
     setTimeout(lives <= 0 ? renderGameOver : nextQuestion, 1400);
@@ -926,7 +860,6 @@ function renderTypingQuestion() {
       <button class="skip-btn" onclick="skipTyping()">わからない</button>
     </div>
   `;
-  // 表示後すぐフォーカス＆読み上げ
   setTimeout(() => {
     const inp = document.getElementById('typingInput');
     if (inp) inp.focus();
@@ -940,7 +873,6 @@ function checkTyping() {
   const userInput = inp.value.trim();
   if (!userInput) return;
 
-  // 正解判定：kanji・hiragana を「・」「、」「（」で分割し、どれか1つと一致で正解
   const normalize = s => s.replace(/\s/g, '');
   const input = normalize(userInput);
   const candidates = [
@@ -1042,7 +974,6 @@ function renderMistakeMenu() {
         <h1 class="logo-title" style="font-size:2rem;">まちがいノート</h1>
         <p class="logo-sub">${mistakeWords.length}語 まちがえたことがあるよ</p>
       </div>
-
       <div class="mistake-list">
         ${mistakeWords.slice(0, 10).map(w => `
           <div class="mistake-item">
@@ -1053,7 +984,6 @@ function renderMistakeMenu() {
         `).join('')}
         ${mistakeWords.length > 10 ? `<p class="mistake-more">…ほか ${mistakeWords.length - 10}語</p>` : ''}
       </div>
-
       <div class="mode-cards">
         <button class="mode-card game-card" onclick="startMistakeGame('normal')">
           <div class="mode-icon">🎮</div>
@@ -1071,7 +1001,6 @@ function renderMistakeMenu() {
           <div class="mode-desc">まちがいだけで　うちこもう</div>
         </button>
       </div>
-
       <div style="display:flex;gap:12px;width:100%;">
         <button class="action-btn ghost" style="flex:1;" onclick="renderMenu()">← もどる</button>
         <button class="action-btn ghost" style="flex:1;color:#ff4b4b;" onclick="confirmResetMistakes()">🗑️ リセット</button>
@@ -1090,7 +1019,6 @@ function confirmResetMistakes() {
 function startMistakeGame(direction = 'normal') {
   const mistakeWords = getMistakeWords();
   if (mistakeWords.length < 4) {
-    // 間違い語が4未満の場合は全体から補填
     filteredWords = [...allWords];
   } else {
     filteredWords = mistakeWords;
@@ -1099,7 +1027,6 @@ function startMistakeGame(direction = 'normal') {
   gameDirection = direction;
   score = 0; lives = MAX_LIVES; answeredCount = 0;
   totalQuestions = Math.min(TOTAL_Q, filteredWords.length);
-  // 間違い回数が多い順に並べてシャッフル（上位を優先）
   gameQueue = filteredWords.slice(0, totalQuestions);
   nextQuestion();
 }
@@ -1124,7 +1051,6 @@ function renderBadgePage() {
   const title  = getCurrentTitle();
   const next   = getNextTitle();
 
-  // 称号ロードマップHTML
   const titleRoadmap = TITLE_DEFS.map(t => {
     const unlocked = earned.length >= t.need;
     return `
@@ -1139,7 +1065,6 @@ function renderBadgePage() {
       </div>`;
   }).join('');
 
-  // バッジ一覧HTML
   const badgeGrid = BADGE_DEFS.map(def => {
     const got = earned.includes(def.id);
     return `
@@ -1155,7 +1080,6 @@ function renderBadgePage() {
         <button class="back-btn" onclick="renderMenu()">← もどる</button>
         <h2 class="badge-page-title">🏅 バッジ・しょうごう</h2>
       </div>
-
       ${title ? `
       <div class="current-title-card">
         <div class="ct-icon">${title.icon}</div>
@@ -1173,7 +1097,6 @@ function renderBadgePage() {
           <p class="ct-msg">バッジを あつめて しょうごうを もらおう！</p>
         </div>
       </div>`}
-
       ${next ? `
       <div class="next-title-bar">
         <span>つぎの しょうごう「${next.title}」まで</span>
@@ -1183,13 +1106,10 @@ function renderBadgePage() {
         </div>
       </div>` : `
       <div class="next-title-bar complete">🎉 すべての しょうごうを かいほう！！</div>`}
-
       <h3 class="section-title">しょうごう ロードマップ</h3>
       <div class="title-roadmap">${titleRoadmap}</div>
-
       <h3 class="section-title">バッジ いちらん <span class="badge-count-text">${earned.length}/${BADGE_DEFS.length}</span></h3>
       <div class="badge-cards-grid">${badgeGrid}</div>
-
       <h3 class="section-title">きろく</h3>
       <div class="stats-grid">
         <div class="stat-item"><span class="stat-val">${stats.totalCorrect||0}</span><span class="stat-label">せいかい</span></div>
@@ -1197,7 +1117,6 @@ function renderBadgePage() {
         <div class="stat-item"><span class="stat-val">${stats.maxComboEver||0}</span><span class="stat-label">さいこうコンボ</span></div>
         <div class="stat-item"><span class="stat-val">${stats.perfectClears||0}</span><span class="stat-label">ぜんもんせいかい</span></div>
       </div>
-
       <button class="action-btn ghost" style="width:100%;margin-top:8px;" onclick="renderMenu()">メニューへもどる</button>
     </div>
   `;
@@ -1207,11 +1126,10 @@ function renderBadgePage() {
 //  リーディングモード
 // ===============================
 let readingText = null;
-let readingPhase = 'read'; // 'read' | 'blank' | 'question'
+let readingPhase = 'read';
 let readingScore = 0;
 let readingIndex = 0;
 
-// 長文一覧
 function renderReadingList() {
   const items = TEXTS.map(t => `
     <button class="reading-item" onclick="startReading(${t.id})">
@@ -1234,7 +1152,6 @@ function renderReadingList() {
   `;
 }
 
-// 長文を選んで練習開始
 function startReading(textId) {
   readingText = TEXTS.find(t => t.id === textId);
   if (!readingText) return;
@@ -1242,11 +1159,9 @@ function startReading(textId) {
   renderReadingPage();
 }
 
-// ===== 練習画面（リーディング） =====
 function renderReadingPage() {
   const t = readingText;
 
-  // 文ごとにスパン化（単語タップ用）
   const sentencesHTML = t.sentences.map((s, si) => {
     const words = s.split(/(\s+|(?=[.,!?])|(?<=[.,!?]))/).filter(Boolean);
     const wordSpans = words.map(w => {
@@ -1270,24 +1185,20 @@ function renderReadingPage() {
         <button class="back-btn" onclick="renderReadingList()">← もどる</button>
         <span class="reading-track-badge">TRACK ${t.track}</span>
       </div>
-
       <div class="reading-content-card">
         <h2 class="reading-content-title">${t.title}</h2>
         <div class="reading-sentences">${sentencesHTML}</div>
         <button class="speak-all-btn" onclick="speakAll()">🔊 ぜんぶ きく</button>
       </div>
-
       <div class="reading-jp-card" id="jpCard">
         <button class="jp-toggle-btn" onclick="toggleJp()">👁️ にほんごやくを みる</button>
         <p class="reading-jp-text" id="jpText" style="display:none;">${t.japanese}</p>
       </div>
-
       <div class="reading-nav-btns">
         <button class="action-btn repeat-btn" onclick="startRepeat()">🎤 リピート れんしゅう</button>
         <button class="action-btn primary" onclick="startBlanks()">✍️ あなうめ もんだい</button>
         <button class="action-btn secondary" onclick="startQuestions()">❓ ないよう もんだい</button>
       </div>
-
       <div id="wordPopup" class="word-popup" style="display:none;"></div>
     </div>
   `;
@@ -1318,9 +1229,8 @@ function speakAll() {
   speak(full, 0.8);
 }
 
-// ===== リピート練習 =====
 let repeatIndex = 0;
-let repeatDoneCount = 0; // 「できた」数
+let repeatDoneCount = 0;
 
 function startRepeat() {
   repeatIndex = 0;
@@ -1341,7 +1251,6 @@ function renderRepeatStep() {
   const total = sentences.length;
   const pct = (repeatIndex / total * 100).toFixed(0);
 
-  // 単語タップ対応のHTML生成
   const wordSpans = s.split(/(\s+|(?=[.,!?])|(?<=[.,!?]))/).filter(Boolean).map(w => {
     const clean = w.replace(/[.,!?]/g, '').toLowerCase();
     const meaning = t.words[clean];
@@ -1359,83 +1268,53 @@ function renderRepeatStep() {
         </div>
         <span class="study-counter">${repeatIndex + 1} / ${total}</span>
       </div>
-
       <div class="repeat-card">
         <p class="repeat-step-label">🎤 きいて　まねしてみよう</p>
-
         <div class="repeat-sentence-box">
           <p class="repeat-sentence-text">${wordSpans}</p>
         </div>
-
         <button class="repeat-listen-btn" id="listenBtn" onclick="doListen()">
           🔊 きく
         </button>
-
         <div class="repeat-mic-area">
           <div class="repeat-mic-icon">🎤</div>
           <p class="repeat-mic-label">↑ まねして　よんでみよう！</p>
         </div>
       </div>
-
       <div class="repeat-judge-btns">
         <p class="repeat-judge-label">よめたかな？</p>
         <div class="repeat-judge-grid">
-          <button class="repeat-ng-btn" onclick="repeatJudge(false)">
-            😢 もう一度
-          </button>
-          <button class="repeat-ok-btn" onclick="repeatJudge(true)">
-            😊 よめた！
-          </button>
+          <button class="repeat-ng-btn" onclick="repeatJudge(false)">😢 もう一度</button>
+          <button class="repeat-ok-btn" onclick="repeatJudge(true)">😊 よめた！</button>
         </div>
       </div>
-
       <div id="wordPopup" class="word-popup" style="display:none;"></div>
     </div>
   `;
-
-  // 画面表示後に自動読み上げ
   setTimeout(() => doListen(), 400);
 }
 
 function doListen() {
   const s = readingText.sentences[repeatIndex];
   const btn = document.getElementById('listenBtn');
-  if (btn) {
-    btn.textContent = '🔊 きいてね…';
-    btn.disabled = true;
-  }
+  if (btn) { btn.textContent = '🔊 きいてね…'; btn.disabled = true; }
   speak(s, 0.75);
-  // 読み上げ後にボタン復活（文字数×150ms目安）
   const wait = Math.max(1500, s.length * 80);
   setTimeout(() => {
-    if (btn) {
-      btn.textContent = '🔊 もう一度きく';
-      btn.disabled = false;
-    }
+    if (btn) { btn.textContent = '🔊 もう一度きく'; btn.disabled = false; }
   }, wait);
 }
 
 function repeatJudge(ok) {
   if (ok) repeatDoneCount++;
-
-  // 「もう一度」なら同じ文をもう一回
   if (!ok) {
-    // フラッシュアニメで「もう一回！」
     const box = document.querySelector('.repeat-sentence-box');
-    if (box) {
-      box.style.borderColor = 'var(--red)';
-      setTimeout(() => { box.style.borderColor = ''; }, 500);
-    }
+    if (box) { box.style.borderColor = 'var(--red)'; setTimeout(() => { box.style.borderColor = ''; }, 500); }
     setTimeout(() => doListen(), 300);
     return;
   }
-
-  // 「できた」なら次の文へ
   const box = document.querySelector('.repeat-sentence-box');
-  if (box) {
-    box.style.borderColor = 'var(--accent)';
-    box.style.background  = 'rgba(88,204,2,.1)';
-  }
+  if (box) { box.style.borderColor = 'var(--accent)'; box.style.background = 'rgba(88,204,2,.1)'; }
   repeatIndex++;
   setTimeout(renderRepeatStep, 700);
 }
@@ -1443,7 +1322,6 @@ function repeatJudge(ok) {
 function renderRepeatComplete() {
   const total = readingText.sentences.length;
   const perfect = repeatDoneCount === total;
-
   document.getElementById('app').innerHTML = `
     <div class="gameover-screen">
       ${perfect ? '<canvas id="fireworksCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:50;width:100%;height:100%;"></canvas>' : ''}
@@ -1463,7 +1341,6 @@ function renderRepeatComplete() {
   if (perfect) setTimeout(launchFireworks, 100);
 }
 
-// ===== 穴埋め問題 =====
 function startBlanks() {
   readingIndex = 0;
   readingScore = 0;
@@ -1477,7 +1354,6 @@ function renderBlankQuestion() {
   const q = blanks[readingIndex];
   const pct = (readingIndex / blanks.length * 100).toFixed(0);
 
-  // 空欄部分を強調表示
   const displaySentence = q.sentence.replace('_____',
     '<span style="border-bottom:3px solid var(--blue);padding:0 16px;margin:0 4px;">　　　</span>');
 
@@ -1525,7 +1401,6 @@ function checkBlank(chosen, btn) {
   setTimeout(renderBlankQuestion, 1300);
 }
 
-// ===== 内容理解問題 =====
 function startQuestions() {
   readingIndex = 0;
   readingScore = 0;
@@ -1581,7 +1456,6 @@ function checkContentQ(chosen, btn) {
   setTimeout(renderContentQuestion, 1300);
 }
 
-// ===== リーディング結果 =====
 function renderReadingResult(phase) {
   const total = phase === 'blank' ? readingText.blanks.length : readingText.questions.length;
   const perfect = readingScore === total;
@@ -1605,7 +1479,7 @@ function renderReadingResult(phase) {
 }
 
 // ===============================
-//  花火・紙吹雪アニメーション
+//  花火アニメーション
 // ===============================
 function launchFireworks() {
   const canvas = document.getElementById('fireworksCanvas');
@@ -1633,7 +1507,6 @@ function launchFireworks() {
     }
   }
 
-  // 複数箇所で花火を打ち上げる
   const positions = [
     [canvas.width * 0.25, canvas.height * 0.3],
     [canvas.width * 0.75, canvas.height * 0.25],
@@ -1649,7 +1522,7 @@ function launchFireworks() {
       const p = particles[i];
       p.x  += p.vx;
       p.y  += p.vy;
-      p.vy += 0.12; // 重力
+      p.vy += 0.12;
       p.vx *= 0.98;
       p.alpha -= p.decay;
       if (p.alpha <= 0) { particles.splice(i, 1); continue; }
