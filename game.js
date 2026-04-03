@@ -43,6 +43,7 @@ function init() {
     ...(typeof WORDS_WEATHER !== 'undefined' ? WORDS_WEATHER : []),
     ...(typeof WORDS_spring_word_verb01 !== 'undefined' ? WORDS_spring_word_verb01 : []),
     ...(typeof WORDS_spring_word_verb02 !== 'undefined' ? WORDS_spring_word_verb02 : []),
+    ...(typeof WORDS_spring_word_verb04 !== 'undefined' ? WORDS_spring_word_verb04 : []),
   ];
   filteredWords = [...allWords];
   renderMenu();
