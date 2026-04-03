@@ -2,7 +2,7 @@
 // id: 300～
 // 春講習　8P
 
-const spring_word_verb02 = [
+const WORDS_spring_word_verb02 = [
     // 動詞
 { id: 300, english: "speak",            kanji: "話す",           hiragana: "はなす",           category: "spring_word_verb02", emoji: "🗣️" },
 { id: 301, english: "speak English",    kanji: "英語を話す",      hiragana: "えいごをはなす",    category: "spring_word_verb02", emoji: "🇬🇧" },
