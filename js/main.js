@@ -51,10 +51,10 @@ const MAX_LIVES = 3;
 function init() {
   allWords = [
     ...WORDS_ADJECTIVES,
-    ...(typeof WORDS_spring_word_verb02 !== 'undefined' ? WORDS_spring_word_verb02 : []),
     ...(typeof WORDS_PLACES  !== 'undefined' ? WORDS_PLACES  : []),
     ...(typeof WORDS_SPORTS  !== 'undefined' ? WORDS_SPORTS  : []),
     ...(typeof WORDS_WEATHER !== 'undefined' ? WORDS_WEATHER : []),
+    ...(typeof WORDS_spring_word_verb02 !== 'undefined' ? WORDS_spring_word_verb02 : []),
   ];
   filteredWords = [...allWords];
   renderMenu();
