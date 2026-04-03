@@ -55,6 +55,8 @@ function init() {
     ...(typeof WORDS_SPORTS  !== 'undefined' ? WORDS_SPORTS  : []),
     ...(typeof WORDS_WEATHER !== 'undefined' ? WORDS_WEATHER : []),
     ...(typeof WORDS_spring_word_verb02 !== 'undefined' ? WORDS_spring_word_verb02 : []),
+    console.log("Verb02 check:", typeof WORDS_spring_word_verb02);
+　　console.log("Total words length:", allWords.length);
   ];
   filteredWords = [...allWords];
   renderMenu();
