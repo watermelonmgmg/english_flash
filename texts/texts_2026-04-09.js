@@ -1,4 +1,4 @@
-const 20260409 = [
+const TEXTS_20260409 = [
   {
     id: 1,
     title: "Laura's Pet",
