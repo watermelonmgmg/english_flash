@@ -44,7 +44,7 @@ function init() {
     ...(typeof WORDS_spring_word_verb01 !== 'undefined' ? WORDS_spring_word_verb01 : []),
     ...(typeof WORDS_spring_word_verb02 !== 'undefined' ? WORDS_spring_word_verb02 : []),
     ...(typeof WORDS_spring_word_verb04 !== 'undefined' ? WORDS_spring_word_verb04 : []),
-    ...(typeof WORDS_2026-04-09 !== 'undefined' ? WORDS_2026-04-09 : []),
+    ...(typeof WORDS_20260409 !== 'undefined' ? WORDS_20260409 : []),
   ];
   filteredWords = [...allWords];
   renderMenu();
