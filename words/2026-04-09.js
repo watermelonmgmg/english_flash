@@ -1,0 +1,23 @@
+const WORDS_2026-04-09 = [
+  
+  { "id": 400, "english": "great", "kanji": "すばらしい", "hiragana": "すばらしい", "category": "2026-04-09" },
+  { "id": 401, "english": "sweet", "kanji": "甘い", "hiragana": "あまい", "category": "2026-04-09" },
+  { "id": 402, "english": "right", "kanji": "右の", "hiragana": "みぎの", "category": "2026-04-09" },
+  { "id": 403, "english": "left", "kanji": "左の", "hiragana": "ひだりの", "category": "2026-04-09" },
+  { "id": 404, "english": "very", "kanji": "とても", "hiragana": "とても", "category": "2026-04-09" },
+  { "id": 405, "english": "well", "kanji": "上手に", "hiragana": "じょうずに", "category": "2026-04-09" },
+  { "id": 406, "english": "cute", "kanji": "かわいい", "hiragana": "かわいい", "category": "2026-04-09" },
+  { "id": 407, "english": "pretty", "kanji": "かわいい", "hiragana": "かわいい", "category": "2026-04-09" },
+  { "id": 408, "english": "in", "kanji": "〜の中", "hiragana": "〜のなか", "category": "2026-04-09" },
+  { "id": 409, "english": "on", "kanji": "〜の上", "hiragana": "〜のうえ", "category": "2026-04-09" },
+  { "id": 410, "english": "under", "kanji": "〜の下", "hiragana": "〜のした", "category": "2026-04-09" },
+  { "id": 411, "english": "by", "kanji": "〜のそば、〜によって", "hiragana": "〜のそば、〜によって", "category": "2026-04-09" },
+  { "id": 412, "english": "at", "kanji": "〜に、〜で", "hiragana": "〜に、〜で", "category": "2026-04-09" },
+  { "id": 413, "english": "after", "kanji": "〜の後", "hiragana": "〜のあと", "category": "2026-04-09" },
+  { "id": 414, "english": "before", "kanji": "〜の前", "hiragana": "〜のまえ", "category": "2026-04-09" },
+  { "id": 415, "english": "but", "kanji": "でも", "hiragana": "でも", "category": "2026-04-09" },
+  { "id": 416, "english": "near", "kanji": "〜の近く", "hiragana": "〜のちかく", "category": "2026-04-09" },
+  { "id": 417, "english": "about", "kanji": "約、〜について", "hiragana": "やく、〜について", "category": "2026-04-09" },
+  { "id": 418, "english": "or", "kanji": "〜か…", "hiragana": "〜か…", "category": "2026-04-09" },
+  { "id": 419, "english": "and", "kanji": "〜と…", "hiragana": "〜と…", "category": "2026-04-09" }
+];
