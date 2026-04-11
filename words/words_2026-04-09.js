@@ -1,4 +1,4 @@
-const WORDS_2026-04-09 = [
+const WORDS_20260409 = [
   
   { "id": 400, "english": "great", "kanji": "すばらしい", "hiragana": "すばらしい", "category": "2026-04-09" },
   { "id": 401, "english": "sweet", "kanji": "甘い", "hiragana": "あまい", "category": "2026-04-09" },
