@@ -19,5 +19,5 @@ const WORDS_2026-04-09 = [
   { "id": 416, "english": "near", "kanji": "〜の近く", "hiragana": "〜のちかく", "category": "2026-04-09" },
   { "id": 417, "english": "about", "kanji": "約、〜について", "hiragana": "やく、〜について", "category": "2026-04-09" },
   { "id": 418, "english": "or", "kanji": "〜か…", "hiragana": "〜か…", "category": "2026-04-09" },
-  { "id": 419, "english": "and", "kanji": "〜と…", "hiragana": "〜と…", "category": "2026-04-09" }
+  { "id": 419, "english": "and", "kanji": "〜と…", "hiragana": "〜と…", "category": "2026-04-09" },
 ];
