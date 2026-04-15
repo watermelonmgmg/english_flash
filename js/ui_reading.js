@@ -65,11 +65,6 @@ function renderReadingPage() {
         <button class="jp-toggle-btn" onclick="toggleJp()">👁️ にほんごやくを みる</button>
         <p class="reading-jp-text" id="jpText" style="display:none;">${t.japanese}</p>
       </div>
-      <div class="reading-nav-btns">
-        <button class="action-btn repeat-btn" onclick="startRepeat()">🎤 リピート れんしゅう</button>
-        <button class="action-btn primary"    onclick="startBlanks()">✍️ あなうめ もんだい</button>
-        <button class="action-btn secondary"  onclick="startQuestions()">❓ ないよう もんだい</button>
-      </div>
       <div id="wordPopup" class="word-popup" style="display:none;"></div>
     </div>
   `;
