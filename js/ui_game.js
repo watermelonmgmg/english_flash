@@ -1,13 +1,12 @@
 // =====================================================
-//  WordQuest — ui_game.js（カテゴリ対応・改良版）
+//  WordQuest — ui_game.js
 // =====================================================
 
+const TOTAL_Q  = 10;
 const MAX_LIVES = 3;
 
 // ===============================
-//  ゲーム開始（カテゴリ＋モード対応）
-// ===============================
-function startGame(direction = 'normal', mode = 'all') {
+function startGame(direction = 'normal') {
   applyFilter(selectedCategory);
 
   if (filteredWords.length < 4) {
@@ -24,30 +23,8 @@ function startGame(direction = 'normal', mode = 'all') {
   combo = 0;
   maxCombo = 0;
 
-  if (mode === 'weak') {
-    const mistakes = loadMistakes();
-
-    // ★ カテゴリ内だけに絞る
-    let mistakeWords = getMistakeWords()
-      .filter(w => w.category === selectedCategory);
-
-    if (mistakeWords.length === 0) {
-      alert('このカテゴリにまちがいがありません');
-      return;
-    }
-
-    // ★ 苦手順（間違い多い順）
-    mistakeWords.sort((a, b) => (mistakes[b.id] || 0) - (mistakes[a.id] || 0));
-
-    filteredWords  = mistakeWords;
-    totalQuestions = Math.min(10, filteredWords.length);
-    gameQueue      = filteredWords.slice(0, totalQuestions);
-
-  } else {
-    // ★ 全問モード
-    totalQuestions = filteredWords.length;
-    gameQueue      = shuffle([...filteredWords]);
-  }
+  totalQuestions = Math.min(TOTAL_Q, filteredWords.length);
+  gameQueue = shuffle([...filteredWords]).slice(0, totalQuestions);
 
   nextQuestion();
 }
@@ -58,6 +35,7 @@ function nextQuestion() {
     renderGameOver();
     return;
   }
+
   currentQuestion = gameQueue[answeredCount];
   renderGameQuestion(makeChoices(currentQuestion));
 }
@@ -69,10 +47,8 @@ function makeChoices(correct) {
 }
 
 // ===============================
-//  問題画面（音修正あり）
-// ===============================
 function renderGameQuestion(choices) {
-  const pct       = (answeredCount / totalQuestions * 100).toFixed(0);
+  const pct = (answeredCount / totalQuestions * 100).toFixed(0);
   const isReverse = gameDirection === 'reverse';
 
   const hearts = Array.from({ length: MAX_LIVES }, (_, i) =>
@@ -80,39 +56,69 @@ function renderGameQuestion(choices) {
   ).join('');
 
   const questionHTML = isReverse
-    ? `<p>にほんごは なに？</p>
-       <div>${currentQuestion.english}</div>`
-    : `<p>えいごは なに？</p>
-       <div><ruby>${currentQuestion.kanji}<rt>${currentQuestion.hiragana}</rt></ruby></div>`;
+    ? `
+      <p class="question-label">にほんごは　なに？</p>
+      <div class="question-word">
+        <span class="q-kanji">${currentQuestion.english}</span>
+      </div>
+      <button class="sound-btn" onclick="speak('${currentQuestion.english}')">🔊 もう一度きく</button>
+    `
+    : `
+      <p class="question-label">えいごは　なに？</p>
+      <div class="question-word">
+        <ruby class="q-kanji">${currentQuestion.kanji}<rt>${currentQuestion.hiragana}</rt></ruby>
+      </div>
+      <button class="sound-btn" onclick="speak('${currentQuestion.english}')">🔊 もう一度きく</button>
+    `;
 
   const choicesHTML = choices.map(c => {
     const label = isReverse
       ? `<ruby>${c.kanji}<rt>${c.hiragana}</rt></ruby>`
       : c.english;
 
-    return `<button class="choice-btn" data-id="${c.id}" onclick="checkAnswer(${c.id}, this)">
-      ${label}
-    </button>`;
+    return `
+      <button class="choice-btn" data-id="${c.id}" onclick="checkAnswer(${c.id}, this)">
+        <span class="choice-text">${label}</span>
+      </button>
+    `;
   }).join('');
 
   document.getElementById('app').innerHTML = `
     <div class="game-screen">
-      <div>${answeredCount + 1}/${totalQuestions}（${pct}%）</div>
-      <div>${hearts} ⭐${score}</div>
+      <div class="game-header">
+        <button class="back-btn" onclick="renderMenu()">← もどる</button>
 
-      ${questionHTML}
+        <div class="game-progress-wrap">
+          <div class="game-progress-bar" style="width:${pct}%"></div>
+        </div>
 
-      <button onclick="speak('${currentQuestion.english}')">🔊 きく</button>
+        <span class="game-counter">${answeredCount + 1}/${totalQuestions}</span>
+      </div>
 
-      <div>${choicesHTML}</div>
+      <div class="game-hud">
+        <div class="hearts-wrap">${hearts}</div>
+        <div class="score-badge">⭐ ${score}</div>
+      </div>
 
-      <button onclick="skipQuestion()">わからない</button>
+      <div class="question-area">
+        ${questionHTML}
+      </div>
+
+      <p class="choice-label">
+        ${isReverse ? 'にほんごを　えらんでね' : 'えいごを　えらんでね'}
+      </p>
+
+      <div class="choices-grid">
+        ${choicesHTML}
+      </div>
+
+      <button class="skip-btn" onclick="skipQuestion()">わからない</button>
     </div>
   `;
+
+  setTimeout(() => speak(currentQuestion.english), 300);
 }
 
-// ===============================
-//  回答チェック
 // ===============================
 function checkAnswer(chosenId, btn) {
   const isCorrect = chosenId === currentQuestion.id;
@@ -133,8 +139,22 @@ function checkAnswer(chosenId, btn) {
 
     speak(currentQuestion.english);
 
+    showFeedback(
+      true,
+      combo >= 3
+        ? `${combo}れんぞく！ +15てん🔥`
+        : 'せいかい！ +10てん 🎉'
+    );
+
+    showCombo(combo);
+
+    const newBadges = addCorrectStats();
+    if (newBadges.length) {
+      setTimeout(() => showBadgeNotification(newBadges), 400);
+    }
+
     answeredCount++;
-    setTimeout(nextQuestion, 800);
+    setTimeout(nextQuestion, 1100);
 
   } else {
     btn.classList.add('wrong');
@@ -143,11 +163,21 @@ function checkAnswer(chosenId, btn) {
     lives--;
 
     saveMistake(currentQuestion.id);
+    speak(currentQuestion.english, 0.6);
 
-    speak(currentQuestion.english, 0.7);
+    showFeedback(false, `こたえは「${currentQuestion.english}」だよ！`);
 
     answeredCount++;
-    setTimeout(lives <= 0 ? renderGameOver : nextQuestion, 1000);
+
+    const retryBadges = addRetryStats();
+    if (retryBadges.length) {
+      setTimeout(() => showBadgeNotification(retryBadges), 400);
+    }
+
+    setTimeout(
+      lives <= 0 ? renderGameOver : nextQuestion,
+      1400
+    );
   }
 }
 
@@ -164,65 +194,19 @@ function skipQuestion() {
   lives--;
 
   saveMistake(currentQuestion.id);
+  speak(currentQuestion.english, 0.6);
+
+  showFeedback(false, `こたえは「${currentQuestion.english}」だよ！`);
 
   answeredCount++;
-  setTimeout(lives <= 0 ? renderGameOver : nextQuestion, 1000);
-}
 
-// ===============================
-//  ゲーム終了
-// ===============================
-function renderGameOver() {
-  document.getElementById('app').innerHTML = `
-    <div>
-      <h2>おわり！</h2>
-      <p>${score}点</p>
-
-      <button onclick="startGame('normal','all')">全問</button>
-      <button onclick="startGame('normal','weak')">苦手</button>
-      <button onclick="renderMenu()">もどる</button>
-    </div>
-  `;
-}
-
-// ===============================
-//  まちがいモード（流用）
-// ===============================
-function startMistakeGame(direction = 'normal') {
-  startGame(direction, 'weak');
-}
-
-function startMistakeTyping() {
-  const mistakeWords = getMistakeWords()
-    .filter(w => w.category === selectedCategory);
-
-  if (mistakeWords.length === 0) {
-    alert('まちがいがありません');
-    return;
+  const retryBadges = addRetryStats();
+  if (retryBadges.length) {
+    setTimeout(() => showBadgeNotification(retryBadges), 400);
   }
 
-  filteredWords  = mistakeWords;
-  currentMode    = 'typing';
-  score = 0;
-  lives = MAX_LIVES;
-  answeredCount = 0;
-
-  totalQuestions = Math.min(10, filteredWords.length);
-  gameQueue      = filteredWords.slice(0, totalQuestions);
-
-  nextTypingQuestion();
-}
-
-// ===============================
-//  音声（安全版）
-// ===============================
-function speak(text, rate = 1) {
-  if (!window.speechSynthesis) return;
-
-  const uttr = new SpeechSynthesisUtterance(text);
-  uttr.lang = 'en-US';
-  uttr.rate = rate;
-
-  speechSynthesis.cancel(); // ★ 連続再生対策
-  speechSynthesis.speak(uttr);
+  setTimeout(
+    lives <= 0 ? renderGameOver : nextQuestion,
+    1400
+  );
 }
