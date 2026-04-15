@@ -1,4 +1,4 @@
-TEXTS.push({
+TEXTS.push[{
     id: 2,
     title: "Laura's Pet",
     track: 54,
