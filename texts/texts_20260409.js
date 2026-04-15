@@ -1,3 +1,4 @@
+window.TEXTS = window.TEXTS || [];
 TEXTS.push[{
     id: 2,
     title: "Laura's Pet",
