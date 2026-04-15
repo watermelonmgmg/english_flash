@@ -1,5 +1,5 @@
 window.TEXTS = window.TEXTS || [];
-TEXTS.push[{
+TEXTS.push({
     id: 2,
     title: "Laura's Pet",
     track: 54,
@@ -60,7 +60,6 @@ TEXTS.push[{
         question: "ローラは犬と何をしますか？",
         choices: ["毎日散歩する", "料理する", "学校に行く", "買い物する"],
         answer: "毎日散歩する"
-      }
-    ]
-  }
-];
+    }
+  ]
+});
