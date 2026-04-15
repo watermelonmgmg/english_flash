@@ -43,7 +43,9 @@ function renderReadingPage() {
     }).join('');
     return `
       <div class="reading-sentence">
-        <button class="sentence-speak-btn" onclick="speak(${JSON.stringify(s)})">🔊</button>
+        <button class="sentence-speak-btn"
+          data-text='${s}'
+          onclick="speak(this.dataset.text)">🔊</button>
         <p class="sentence-text">${wordSpans}</p>
       </div>`;
   }).join('');
