@@ -2,6 +2,7 @@
 // texts/ フォルダに置く
 // id は 1〜（長文ごとに連番）
 
+window.TEXTS = window.TEXTS || [];
 TEXTS.push[{
     id: 1,
     title: "Mark's Best Friend",
