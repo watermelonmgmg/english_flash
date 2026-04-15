@@ -174,10 +174,13 @@ function checkAnswer(chosenId, btn) {
       setTimeout(() => showBadgeNotification(retryBadges), 400);
     }
 
-    setTimeout(
-      lives <= 0 ? renderGameOver : nextQuestion,
-      1400
-    );
+    setTimeout(() => {
+      if (lives <= 0) {
+        renderGameOver();
+        } else {
+        nextQuestion();
+        }
+      }, 1400);
   }
 }
 
